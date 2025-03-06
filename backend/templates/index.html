@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watchlist</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Letterboxd watchlist streaming provider</h1>
+        <h3>Enter your Letterboxd username and country code</h3>
+        <form method="POST" action="/" class="form-container">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required value="{{ username if username else '' }}">
+            </div>
+            <div class="form-group">
+                <label for="country_code">Country Code:</label>
+                <select id="country_code" name="country_code" required>
+                    {% for region in regions %}
+                        <option value="{{ region }}" {% if country_code == region %}selected{% endif %}>{{ region }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <script>
+                document.getElementById('country_code').addEventListener('change', function() {
+                    this.form.submit();
+                });
+            </script>
+            {% if region_providers %}
+                <h3>Select Providers</h3>
+                <div class="providers-container">
+                    {% for provider in region_providers %}
+                        <div class="provider-item">
+                            <input type="checkbox" name="providers" value="{{ provider }}">{{ provider }}
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="submit" formaction="/results">Get Watchlist</button>
+            {% endif %}
+        </form>
+    </div>
+</body>
+</html>
