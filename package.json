@@ -1,0 +1,16 @@
+{
+  "name": "film_checker",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently --kill-others --handle-input --names \"FRONTEND,BACKEND\" --prefix-colors \"cyan,green\" \"npm run front\" \"npm run back\"",
+    "front": "cd frontend && npm run dev",
+    "back": "cd backend && python app.py"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
