@@ -7,7 +7,7 @@ import contextlib
 connection_pool = None
 
 
-def get_db_connection():
+def get_db_connection() -> psycopg2.extensions.connection:
     """
     Get a connection from the connection pool
     """
@@ -45,6 +45,14 @@ def release_db_connection(connexion):
         connection_pool.putconn(connexion)
 
 
+def get_cursor():
+    """
+    Get a cursor from the connection pool
+    """
+    connexion = get_db_connection()
+    return connexion.cursor()
+
+
 @contextlib.contextmanager
 def db_connection():
     """
@@ -59,15 +67,14 @@ def db_connection():
             release_db_connection(conn)
 
 
-def get_userID(username: str):
+def get_userID(username: str) -> str:
     """
     Get the user ID for the given username
     If not found, create a new user and return the user ID
     """
-    with db_connection() as conn:
+    with db_connection():
         try:
-            connection_pool = get_db_connection()
-            cursor = connection_pool.cursor()
+            cursor = get_cursor()
             # Query to check if the user has existing results for this country code
             cursor.execute(
                 'SELECT user_id FROM "USER" WHERE Letterboxd_username = %s', (username,)
@@ -94,14 +101,13 @@ def get_userID(username: str):
             return None
 
 
-def get_user_last_research_date(user_ID):
+def get_user_last_research_date(user_ID: str) -> str:
     """
     Get the last research date for the given user ID
     """
-    with db_connection() as conn:
+    with db_connection():
         try:
-            connection_pool = get_db_connection()
-            cursor = connection_pool.cursor()
+            cursor = get_cursor()
             # Query to check if the user has existing results for this country code
             cursor.execute(
                 'SELECT last_research FROM "USER" WHERE user_id = %s', (user_ID,)
@@ -120,14 +126,13 @@ def get_user_last_research_date(user_ID):
             return None
 
 
-def get_user_providers(user_ID, country_code):
+def get_user_providers(user_ID: str, country_code: str) -> list:
     """
     Get the providers for the given user ID and country
     """
     with db_connection() as conn:
         try:
-            connection_pool = get_db_connection()
-            cursor = connection_pool.cursor()
+            cursor = get_cursor()
             # Query to check if the user has existing results for this country code
             cursor.execute(
                 'SELECT provider_name FROM "PROVIDER" WHERE user_id = %s AND country_code = %s',
@@ -141,7 +146,7 @@ def get_user_providers(user_ID, country_code):
             return []
 
 
-def get_user_results(user_ID: str, country_code: str):
+def get_user_results(user_ID: str, country_code: str) -> list:
     """
     Get the results for the given user ID and country
     """
@@ -186,8 +191,7 @@ def modify_last_research_user(user_ID: str):
     """
     with db_connection():
         try:
-            connection_pool = get_db_connection()
-            cursor = connection_pool.cursor()
+            cursor = get_cursor()
             # Query to update the last research date for the user
             now = datetime.now()
             cursor.execute(
@@ -210,8 +214,7 @@ def modify_user_providers(user_ID: str, country_code: str, providers: list):
     """
     with db_connection():
         try:
-            connection_pool = get_db_connection()
-            cursor = connection_pool.cursor()
+            cursor = get_cursor()
             # Get current providers for this user and country
             cursor.execute(
                 'SELECT provider_name FROM "PROVIDER" WHERE user_id = %s AND country_code = %s',
@@ -254,8 +257,7 @@ def modify_film(user_ID: str, country_code: str, films: list):
     """
     with db_connection():
         try:
-            connection_pool = get_db_connection()
-            cursor = connection_pool.cursor()
+            cursor = get_cursor()
             # Query to get the films for the actual user_ID and country_code
             cursor.execute(
                 'SELECT film_id, title, grade, providers, date FROM "FILM" WHERE user_ID = %s AND country_code = %s',
