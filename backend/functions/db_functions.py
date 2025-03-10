@@ -91,13 +91,16 @@ def get_userID(username: str) -> str:
                 (username, now, now),
             )
             user_ID = cursor.fetchone()[0]
-            connection_pool.commit()
+            conn.commit()
         return user_ID
 
     except Exception as e:
         print(f"Failed to retrieve the user ID: {e}")
         release_db_connection(connection_pool)
         return None
+
+    finally:
+        release_db_connection(conn)
 
 
 def get_user_last_research_date(user_ID: str) -> str:
@@ -122,6 +125,8 @@ def get_user_last_research_date(user_ID: str) -> str:
         print(f"Failed to retrieve the last research date for the user: {e}")
         release_db_connection(connection_pool)
         return None
+    finally:
+        release_db_connection(conn)
 
 
 def get_user_providers(user_ID: str, country_code: str) -> list:
@@ -141,6 +146,8 @@ def get_user_providers(user_ID: str, country_code: str) -> list:
     except Exception as e:
         release_db_connection(connection_pool)
         return []
+    finally:
+        release_db_connection(conn)
 
 
 def get_user_results(user_ID: str, country_code: str) -> list:
@@ -178,6 +185,8 @@ def get_user_results(user_ID: str, country_code: str) -> list:
         print(f"Failed to retrieve the user results: {e}")
         release_db_connection(connection_pool)
         return []
+    finally:
+        release_db_connection(conn)
 
 
 def modify_last_research_user(user_ID: str):
@@ -198,6 +207,8 @@ def modify_last_research_user(user_ID: str):
         print(f"Failed to update the last research date for the user: {e}")
         release_db_connection(connection_pool)
         return None
+    finally:
+        release_db_connection(conn)
 
 
 def modify_user_providers(user_ID: str, country_code: str, providers: list):
@@ -239,6 +250,8 @@ def modify_user_providers(user_ID: str, country_code: str, providers: list):
         print(f"Failed to update the user providers: {e}")
         release_db_connection(connection_pool)
         return None
+    finally:
+        release_db_connection(conn)
 
 
 def modify_film(user_ID: str, country_code: str, films: list):
@@ -248,69 +261,70 @@ def modify_film(user_ID: str, country_code: str, films: list):
     If film providers or grade have changed, update them.
     If film is not in the new list, delete it.
     """
-    with db_connection() as conn:
-        try:
-            conn, cursor = get_connexion_and_cursor()
-            # Query to get the films for the actual user_ID and country_code
-            cursor.execute(
-                'SELECT film_id, title, grade, providers, date FROM "FILM" WHERE user_ID = %s AND country_code = %s',
-                (user_ID, country_code),
-            )
-            result = cursor.fetchall()
-            print("Movies in DB", result)
-            print("Movies in API", films)
+    try:
+        conn, cursor = get_connexion_and_cursor()
+        # Query to get the films for the actual user_ID and country_code
+        cursor.execute(
+            'SELECT film_id, title, grade, providers, date FROM "FILM" WHERE user_ID = %s AND country_code = %s',
+            (user_ID, country_code),
+        )
+        result = cursor.fetchall()
+        print("Movies in DB", result)
+        print("Movies in API", films)
 
-            # Compare the films in the database with the new films
-            for film in films:
-                if film not in result:
-                    # Insert the new film in the database
-                    # Insert new film into the database
-                    cursor.execute(
-                        'INSERT INTO "FILM" (user_ID, country_code, film_id, title, grade, providers, date) VALUES (%s, %s, %s, %s, %s, %s, %s)',
-                        (
-                            user_ID,
-                            country_code,
-                            film["id"],
-                            film["title"],
-                            film["note"],
-                            json.dumps(film["providers"]),
-                            film.get("date", None),
-                        ),
-                    )
-                else:
-                    for row in result:
-                        if row[1] == film["title"]:  # Match by title
-                            current_grade = row[2]
-                            current_providers = json.loads(row[3]) if row[3] else []
+        # Compare the films in the database with the new films
+        for film in films:
+            if film not in result:
+                # Insert the new film in the database
+                # Insert new film into the database
+                cursor.execute(
+                    'INSERT INTO "FILM" (user_ID, country_code, film_id, title, grade, providers, date) VALUES (%s, %s, %s, %s, %s, %s, %s)',
+                    (
+                        user_ID,
+                        country_code,
+                        film["id"],
+                        film["title"],
+                        film["note"],
+                        json.dumps(film["providers"]),
+                        film.get("date", None),
+                    ),
+                )
+            else:
+                for row in result:
+                    if row[1] == film["title"]:  # Match by title
+                        current_grade = row[2]
+                        current_providers = json.loads(row[3]) if row[3] else []
 
-                            # Only update if data has changed
-                            if current_grade != film["note"] or sorted(
-                                current_providers
-                            ) != sorted(film["providers"]):
-                                cursor.execute(
-                                    'UPDATE "FILM" SET grade = %s, providers = %s WHERE user_ID = %s AND country_code = %s AND title = %s',
-                                    (
-                                        film["note"],
-                                        json.dumps(film["providers"]),
-                                        user_ID,
-                                        country_code,
-                                        film["title"],
-                                    ),
-                                )
-                            break
+                        # Only update if data has changed
+                        if current_grade != film["note"] or sorted(
+                            current_providers
+                        ) != sorted(film["providers"]):
+                            cursor.execute(
+                                'UPDATE "FILM" SET grade = %s, providers = %s WHERE user_ID = %s AND country_code = %s AND title = %s',
+                                (
+                                    film["note"],
+                                    json.dumps(film["providers"]),
+                                    user_ID,
+                                    country_code,
+                                    film["title"],
+                                ),
+                            )
+                        break
 
-            # Delete the films in the database that are not in the new films
-            for row in result:
-                if row not in films:
-                    cursor.execute(
-                        'DELETE FROM "FILM" WHERE user_ID = %s AND country_code = %s AND title = %s',
-                        (user_ID, country_code, row[1]),
-                    )
+        # Delete the films in the database that are not in the new films
+        for row in result:
+            if row not in films:
+                cursor.execute(
+                    'DELETE FROM "FILM" WHERE user_ID = %s AND country_code = %s AND title = %s',
+                    (user_ID, country_code, row[1]),
+                )
 
-            conn.commit()
-            return 0
+        conn.commit()
+        return 0
 
-        except Exception as e:
-            print(f"Failed to update the film: {e}")
-            release_db_connection(connection_pool)
-            return None
+    except Exception as e:
+        print(f"Failed to update the film: {e}")
+        release_db_connection(connection_pool)
+        return None
+    finally:
+        release_db_connection(conn)
