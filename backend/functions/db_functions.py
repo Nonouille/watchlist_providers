@@ -74,6 +74,7 @@ def get_userID(username: str) -> str:
     """
     with db_connection():
         try:
+            cursor = conn.cursor()
             cursor = get_cursor()
             # Query to check if the user has existing results for this country code
             cursor.execute(
@@ -152,8 +153,7 @@ def get_user_results(user_ID: str, country_code: str) -> list:
     """
     with db_connection() as conn:
         try:
-            connection_pool = get_db_connection()
-            cursor = connection_pool.cursor()
+            cursor = conn.cursor()
             # Query to check if the user has existing results for this country code
             cursor.execute(
                 'SELECT film_ID, title, grade, providers, date FROM "FILM" WHERE user_ID = %s AND country_code = %s',
@@ -189,7 +189,7 @@ def modify_last_research_user(user_ID: str):
     """
     Update the last research date for the given user ID
     """
-    with db_connection():
+    with db_connection() as conn:
         try:
             cursor = get_cursor()
             # Query to update the last research date for the user
@@ -198,7 +198,7 @@ def modify_last_research_user(user_ID: str):
                 'UPDATE "USER" SET last_research = %s WHERE user_id = %s',
                 (now, user_ID),
             )
-            connection_pool.commit()
+            conn.commit()
 
         except Exception as e:
             print(f"Failed to update the last research date for the user: {e}")
@@ -212,7 +212,7 @@ def modify_user_providers(user_ID: str, country_code: str, providers: list):
     If provider is not found, insert it.
     If provider is not in the new list, delete it.
     """
-    with db_connection():
+    with db_connection() as conn:
         try:
             cursor = get_cursor()
             # Get current providers for this user and country
@@ -239,7 +239,7 @@ def modify_user_providers(user_ID: str, country_code: str, providers: list):
                     (user_ID, country_code, provider),
                 )
 
-            connection_pool.commit()
+            conn.commit()
             return 0
 
         except Exception as e:
@@ -255,7 +255,7 @@ def modify_film(user_ID: str, country_code: str, films: list):
     If film providers or grade have changed, update them.
     If film is not in the new list, delete it.
     """
-    with db_connection():
+    with db_connection() as conn:
         try:
             cursor = get_cursor()
             # Query to get the films for the actual user_ID and country_code
@@ -314,7 +314,7 @@ def modify_film(user_ID: str, country_code: str, films: list):
                         (user_ID, country_code, row[1]),
                     )
 
-            connection_pool.commit()
+            conn.commit()
             return 0
 
         except Exception as e:
