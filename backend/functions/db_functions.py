@@ -41,8 +41,8 @@ def release_db_connection(connexion):
     Release the connection back to the connection pool
     """
     global connection_pool
-    if connection_pool and conn:
-        connection_pool.putconn(conn)
+    if connection_pool and connexion:
+        connection_pool.putconn(connexion)
 
 
 @contextlib.contextmanager
@@ -59,7 +59,7 @@ def db_connection():
             release_db_connection(conn)
 
 
-def get_userID(username):
+def get_userID(username: str):
     """
     Get the user ID for the given username
     If not found, create a new user and return the user ID
@@ -91,7 +91,7 @@ def get_userID(username):
         except Exception as e:
             print(f"Failed to retrieve the user ID: {e}")
             release_db_connection(connection_pool)
-            return -1
+            return None
 
 
 def get_user_last_research_date(user_ID):
@@ -184,7 +184,7 @@ def modify_last_research_user(user_ID: str):
     """
     Update the last research date for the given user ID
     """
-    with db_connection() as conn:
+    with db_connection():
         try:
             connection_pool = get_db_connection()
             cursor = connection_pool.cursor()
@@ -199,16 +199,16 @@ def modify_last_research_user(user_ID: str):
         except Exception as e:
             print(f"Failed to update the last research date for the user: {e}")
             release_db_connection(connection_pool)
-            return -1
+            return None
 
 
-def modify_user_providers(user_ID, country_code, providers):
+def modify_user_providers(user_ID: str, country_code: str, providers: list):
     """
     Update the providers for the given user ID and country.
     If provider is not found, insert it.
     If provider is not in the new list, delete it.
     """
-    with db_connection() as conn:
+    with db_connection():
         try:
             connection_pool = get_db_connection()
             cursor = connection_pool.cursor()
@@ -242,7 +242,7 @@ def modify_user_providers(user_ID, country_code, providers):
         except Exception as e:
             print(f"Failed to update the user providers: {e}")
             release_db_connection(connection_pool)
-            return -1
+            return None
 
 
 def modify_film(user_ID: str, country_code: str, films: list):
@@ -252,7 +252,7 @@ def modify_film(user_ID: str, country_code: str, films: list):
     If film providers or grade have changed, update them.
     If film is not in the new list, delete it.
     """
-    with db_connection() as conn:
+    with db_connection():
         try:
             connection_pool = get_db_connection()
             cursor = connection_pool.cursor()
@@ -318,4 +318,4 @@ def modify_film(user_ID: str, country_code: str, films: list):
         except Exception as e:
             print(f"Failed to update the film: {e}")
             release_db_connection(connection_pool)
-            return -1
+            return None
