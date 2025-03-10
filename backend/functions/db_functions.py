@@ -45,12 +45,12 @@ def release_db_connection(connexion):
         connection_pool.putconn(connexion)
 
 
-def get_cursor():
+def get_connexion_and_cursor():
     """
     Get a cursor from the connection pool
     """
     connexion = get_db_connection()
-    return connexion.cursor()
+    return connexion, connexion.cursor()
 
 
 @contextlib.contextmanager
@@ -72,138 +72,132 @@ def get_userID(username: str) -> str:
     Get the user ID for the given username
     If not found, create a new user and return the user ID
     """
-    with db_connection():
-        try:
-            cursor = conn.cursor()
-            cursor = get_cursor()
-            # Query to check if the user has existing results for this country code
+    try:
+        conn, cursor = get_connexion_and_cursor()
+        # Query to check if the user has existing results for this country code
+        cursor.execute(
+            'SELECT user_id FROM "USER" WHERE Letterboxd_username = %s', (username,)
+        )
+        result = cursor.fetchone()
+        # A user exists, return the user ID
+        if result:
+            user_ID = result[0]
+
+        # A user doesn't exist, create a new user and return the user ID
+        else:
+            now = datetime.now()
             cursor.execute(
-                'SELECT user_id FROM "USER" WHERE Letterboxd_username = %s', (username,)
+                'INSERT INTO "USER" (letterboxd_username, created_at, last_research) VALUES (%s,%s,%s) RETURNING user_id',
+                (username, now, now),
             )
-            result = cursor.fetchone()
-            # A user exists, return the user ID
-            if result:
-                user_ID = result[0]
+            user_ID = cursor.fetchone()[0]
+            connection_pool.commit()
+        return user_ID
 
-            # A user doesn't exist, create a new user and return the user ID
-            else:
-                now = datetime.now()
-                cursor.execute(
-                    'INSERT INTO "USER" (letterboxd_username, created_at, last_research) VALUES (%s,%s,%s) RETURNING user_id',
-                    (username, now, now),
-                )
-                user_ID = cursor.fetchone()[0]
-                connection_pool.commit()
-            return user_ID
-
-        except Exception as e:
-            print(f"Failed to retrieve the user ID: {e}")
-            release_db_connection(connection_pool)
-            return None
+    except Exception as e:
+        print(f"Failed to retrieve the user ID: {e}")
+        release_db_connection(connection_pool)
+        return None
 
 
 def get_user_last_research_date(user_ID: str) -> str:
     """
     Get the last research date for the given user ID
     """
-    with db_connection():
-        try:
-            cursor = get_cursor()
-            # Query to check if the user has existing results for this country code
-            cursor.execute(
-                'SELECT last_research FROM "USER" WHERE user_id = %s', (user_ID,)
-            )
-            result = cursor.fetchone()
-            # A user exists, return the user ID
-            if result:
-                last_research = result[0]
-                return last_research
-            else:
-                return None
-
-        except Exception as e:
-            print(f"Failed to retrieve the last research date for the user: {e}")
-            release_db_connection(connection_pool)
+    try:
+        conn, cursor = get_connexion_and_cursor()
+        # Query to check if the user has existing results for this country code
+        cursor.execute(
+            'SELECT last_research FROM "USER" WHERE user_id = %s', (user_ID,)
+        )
+        result = cursor.fetchone()
+        # A user exists, return the user ID
+        if result:
+            last_research = result[0]
+            return last_research
+        else:
             return None
+
+    except Exception as e:
+        print(f"Failed to retrieve the last research date for the user: {e}")
+        release_db_connection(connection_pool)
+        return None
 
 
 def get_user_providers(user_ID: str, country_code: str) -> list:
     """
     Get the providers for the given user ID and country
     """
-    with db_connection() as conn:
-        try:
-            cursor = get_cursor()
-            # Query to check if the user has existing results for this country code
-            cursor.execute(
-                'SELECT provider_name FROM "PROVIDER" WHERE user_id = %s AND country_code = %s',
-                (user_ID, country_code),
-            )
-            providers = [row[0] for row in cursor.fetchall()]
-            return providers
+    try:
+        conn, cursor = get_connexion_and_cursor()
+        # Query to check if the user has existing results for this country code
+        cursor.execute(
+            'SELECT provider_name FROM "PROVIDER" WHERE user_id = %s AND country_code = %s',
+            (user_ID, country_code),
+        )
+        providers = [row[0] for row in cursor.fetchall()]
+        return providers
 
-        except Exception as e:
-            release_db_connection(connection_pool)
-            return []
+    except Exception as e:
+        release_db_connection(connection_pool)
+        return []
 
 
 def get_user_results(user_ID: str, country_code: str) -> list:
     """
     Get the results for the given user ID and country
     """
-    with db_connection() as conn:
-        try:
-            cursor = conn.cursor()
-            # Query to check if the user has existing results for this country code
-            cursor.execute(
-                'SELECT film_ID, title, grade, providers, date FROM "FILM" WHERE user_ID = %s AND country_code = %s',
-                (user_ID, country_code),
-            )
-            result = cursor.fetchall()
-            # A user has existing results, return the film list
-            if result:
-                films = []
-                for row in result:
-                    films.append(
-                        {
-                            "id": row[0],
-                            "title": row[1],
-                            "grade": row[2],
-                            "providers": json.loads(row[3]),
-                            "date": row[4],
-                        }
-                    )
-                return films
+    try:
+        conn, cursor = get_connexion_and_cursor()
+        # Query to check if the user has existing results for this country code
+        cursor.execute(
+            'SELECT film_ID, title, grade, providers, date FROM "FILM" WHERE user_ID = %s AND country_code = %s',
+            (user_ID, country_code),
+        )
+        result = cursor.fetchall()
+        # A user has existing results, return the film list
+        if result:
+            films = []
+            for row in result:
+                films.append(
+                    {
+                        "id": row[0],
+                        "title": row[1],
+                        "grade": row[2],
+                        "providers": json.loads(row[3]),
+                        "date": row[4],
+                    }
+                )
+            return films
 
-            # A user doesn't have existing results, return an empty list
-            else:
-                return []
-
-        except Exception as e:
-            print(f"Failed to retrieve the user results: {e}")
-            release_db_connection(connection_pool)
+        # A user doesn't have existing results, return an empty list
+        else:
             return []
+
+    except Exception as e:
+        print(f"Failed to retrieve the user results: {e}")
+        release_db_connection(connection_pool)
+        return []
 
 
 def modify_last_research_user(user_ID: str):
     """
     Update the last research date for the given user ID
     """
-    with db_connection() as conn:
-        try:
-            cursor = get_cursor()
-            # Query to update the last research date for the user
-            now = datetime.now()
-            cursor.execute(
-                'UPDATE "USER" SET last_research = %s WHERE user_id = %s',
-                (now, user_ID),
-            )
-            conn.commit()
+    try:
+        conn, cursor = get_connexion_and_cursor()
+        # Query to update the last research date for the user
+        now = datetime.now()
+        cursor.execute(
+            'UPDATE "USER" SET last_research = %s WHERE user_id = %s',
+            (now, user_ID),
+        )
+        conn.commit()
 
-        except Exception as e:
-            print(f"Failed to update the last research date for the user: {e}")
-            release_db_connection(connection_pool)
-            return None
+    except Exception as e:
+        print(f"Failed to update the last research date for the user: {e}")
+        release_db_connection(connection_pool)
+        return None
 
 
 def modify_user_providers(user_ID: str, country_code: str, providers: list):
@@ -212,40 +206,39 @@ def modify_user_providers(user_ID: str, country_code: str, providers: list):
     If provider is not found, insert it.
     If provider is not in the new list, delete it.
     """
-    with db_connection() as conn:
-        try:
-            cursor = get_cursor()
-            # Get current providers for this user and country
+    try:
+        conn, cursor = get_connexion_and_cursor()
+        # Get current providers for this user and country
+        cursor.execute(
+            'SELECT provider_name FROM "PROVIDER" WHERE user_id = %s AND country_code = %s',
+            (user_ID, country_code),
+        )
+        current_providers = [row[0] for row in cursor.fetchall()]
+
+        # Delete providers that are in the database but not in the new list
+        providers_to_remove = [p for p in current_providers if p not in providers]
+        if providers_to_remove:
+            placeholders = ",".join(["%s"] * len(providers_to_remove))
             cursor.execute(
-                'SELECT provider_name FROM "PROVIDER" WHERE user_id = %s AND country_code = %s',
-                (user_ID, country_code),
+                f'DELETE FROM "PROVIDER" WHERE user_id = %s AND country_code = %s AND provider_name IN ({placeholders})',
+                (user_ID, country_code, *providers_to_remove),
             )
-            current_providers = [row[0] for row in cursor.fetchall()]
 
-            # Delete providers that are in the database but not in the new list
-            providers_to_remove = [p for p in current_providers if p not in providers]
-            if providers_to_remove:
-                placeholders = ",".join(["%s"] * len(providers_to_remove))
-                cursor.execute(
-                    f'DELETE FROM "PROVIDER" WHERE user_id = %s AND country_code = %s AND provider_name IN ({placeholders})',
-                    (user_ID, country_code, *providers_to_remove),
-                )
+        # Add new providers that aren't already in the database
+        providers_to_add = [p for p in providers if p not in current_providers]
+        for provider in providers_to_add:
+            cursor.execute(
+                'INSERT INTO "PROVIDER" (user_ID, country_code, provider_name) VALUES (%s, %s, %s)',
+                (user_ID, country_code, provider),
+            )
 
-            # Add new providers that aren't already in the database
-            providers_to_add = [p for p in providers if p not in current_providers]
-            for provider in providers_to_add:
-                cursor.execute(
-                    'INSERT INTO "PROVIDER" (user_ID, country_code, provider_name) VALUES (%s, %s, %s)',
-                    (user_ID, country_code, provider),
-                )
+        conn.commit()
+        return 0
 
-            conn.commit()
-            return 0
-
-        except Exception as e:
-            print(f"Failed to update the user providers: {e}")
-            release_db_connection(connection_pool)
-            return None
+    except Exception as e:
+        print(f"Failed to update the user providers: {e}")
+        release_db_connection(connection_pool)
+        return None
 
 
 def modify_film(user_ID: str, country_code: str, films: list):
@@ -257,7 +250,7 @@ def modify_film(user_ID: str, country_code: str, films: list):
     """
     with db_connection() as conn:
         try:
-            cursor = get_cursor()
+            conn, cursor = get_connexion_and_cursor()
             # Query to get the films for the actual user_ID and country_code
             cursor.execute(
                 'SELECT film_id, title, grade, providers, date FROM "FILM" WHERE user_ID = %s AND country_code = %s',
