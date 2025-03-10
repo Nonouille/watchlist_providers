@@ -49,20 +49,6 @@ def get_connexion_and_cursor():
     return connexion, connexion.cursor()
 
 
-@contextlib.contextmanager
-def db_connection():
-    """
-    Gestionnaire de contexte pour les connexions.
-    """
-    conn = None
-    try:
-        conn = get_db_connection()
-        yield conn
-    finally:
-        if conn:
-            release_db_connection(conn)
-
-
 def db_operation(commit: bool = False):
     """
     Décorateur pour centraliser la gestion de la connexion,
