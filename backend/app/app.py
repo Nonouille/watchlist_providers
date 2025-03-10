@@ -54,6 +54,7 @@ def results():
     username = data.get('username')
     country_code = data.get('country_code')
     selected_providers = data.get('providers', [])
+    refresh = data.get('refresh', False)
     if not country_code:
         return "Error: country_code parameter is required", 400
     if not username:
@@ -72,7 +73,7 @@ def results():
     modify_user_providers(user_ID,country_code,selected_providers)    
     
     watchlist = get_user_results(user_ID,country_code)
-    if not watchlist or not last_research_date or (datetime.now() - last_research_date).days > 7:
+    if not watchlist or not last_research_date or (datetime.now() - last_research_date).days > 7 or refresh:
         watchlist = get_watchlist(username)
         if not watchlist:
             return "Error: failed to retrieve the watchlist", 500
