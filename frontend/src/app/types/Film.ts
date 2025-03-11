@@ -2,6 +2,6 @@ export interface Film {
     id: number;
     date: string | null;
     title: string;
-    grade: number;
+    note: number;
     providers: string[];
 }
