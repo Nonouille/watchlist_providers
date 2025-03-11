@@ -138,8 +138,6 @@ def modify_film(cursor, user_ID: str, country_code: str, films: list):
         (user_ID, country_code),
     )
     existing_films = cursor.fetchall()
-    print("Movies in DB", existing_films)
-    print("Movies in API", films)
 
     # Insertion et mise à jour
     for film in films:

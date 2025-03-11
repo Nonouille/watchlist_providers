@@ -75,6 +75,7 @@ def get_ids(watchlist: list) -> list:
         if data["results"]:
             watchlist[index]["id"] = data["results"][0]["id"]
             watchlist[index]["note"] = round(data["results"][0]["vote_average"], 1)
+            watchlist[index]["date"] = data["results"][0]["release_date"].split("-")[0]
             indexed_watchlist.append(watchlist[index])
         indexed_watchlist.sort(key=lambda x: x.get("note", 0), reverse=True)
 
