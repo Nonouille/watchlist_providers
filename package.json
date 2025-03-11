@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently --kill-others --handle-input --names \"FRONTEND,BACKEND\" --prefix-colors \"cyan,green\" \"npm run front\" \"npm run back\"",
-    "front": "cd frontend && npm run dev",
-    "back": "cd backend && python main.py"
+    "dev": "concurrently --kill-others --handle-input --names \"FRONTEND,BACKEND\" --prefix-colors \"cyan,green\" \"npm run front_dev\" \"npm run back\"",
+    "start": "concurrently --kill-others --handle-input --names \"FRONTEND,BACKEND\" --prefix-colors \"cyan,green\" \"npm run front\" \"npm run back\"",
+    "front_dev": "cd frontend && npm run dev",
+    "front": "cd frontend && npm start",
+    "back": "cd backend && python main.py",
+    "build": "cd frontend && npm run build"
+
   },
   "author": "",
   "license": "ISC",
