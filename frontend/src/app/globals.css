@@ -13,6 +13,22 @@ html, body {
   box-sizing: border-box;
 }
 
+/* Customize scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #eeee;
+  border-radius: 20px;
+}
+
+
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
