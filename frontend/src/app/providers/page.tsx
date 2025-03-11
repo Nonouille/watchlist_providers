@@ -93,7 +93,7 @@ export default function Providers() {
                         Get your watchlist streaming providers
                     </button>
                 </Link>
-                <div className="mt-2 ml-0.5 flex items-center space-x-1">
+                <div className="mt-2 ml-0.5 flex items-center space-x-1 pl-4 pt-2">
                     <input type="checkbox" id="refresh" checked={refresh} onChange={() => setRefresh(!refresh)} className='h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded' />
                     <label htmlFor="refresh" className=" text-sm text-gray-700">Search letterboxd again</label>
                 </div>

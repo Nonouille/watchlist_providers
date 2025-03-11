@@ -8,7 +8,7 @@ const Header = () => {
                 <div className="flex items-center justify-between h-16">
                     <div className="flex-shrink-0">
                         <Link href="/" className="flex items-center">
-                            <span className="text-white text-xlfont-bold">FilmChecker</span>
+                            <span className="text-white text-xl font-bold">FilmChecker</span>
                         </Link>
                     </div>
                     
