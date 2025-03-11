@@ -152,7 +152,7 @@ def modify_film(cursor, user_ID: str, country_code: str, films: list):
                     film["title"],
                     film["note"],
                     json.dumps(film["providers"]),
-                    film.get("date", None),
+                    film["date"],
                 ),
             )
         else:
@@ -161,13 +161,15 @@ def modify_film(cursor, user_ID: str, country_code: str, films: list):
                 if row[1] == film["title"]:
                     current_grade = row[2]
                     current_providers = json.loads(row[3]) if row[3] else []
-                    if current_grade != film["note"] or sorted(
+                    current_date = row[4]
+                    if current_grade != film["note"] or current_date != film["date"] or sorted(
                         current_providers
                     ) != sorted(film["providers"]):
                         cursor.execute(
-                            'UPDATE "FILM" SET grade = %s, providers = %s WHERE user_ID = %s AND country_code = %s AND title = %s',
+                            'UPDATE "FILM" SET grade = %s, date = %s, providers = %s WHERE user_ID = %s AND country_code = %s AND title = %s',
                             (
                                 film["note"],
+                                film["date"],
                                 json.dumps(film["providers"]),
                                 user_ID,
                                 country_code,
@@ -245,7 +247,7 @@ def get_user_results(cursor, user_ID: str, country_code: str) -> list:
             {
                 "id": row[0],
                 "title": row[1],
-                "grade": row[2],
+                "note": row[2],
                 "providers": json.loads(row[3]),
                 "date": row[4],
             }

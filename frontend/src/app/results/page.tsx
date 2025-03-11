@@ -36,7 +36,6 @@ export default function Result() {
                     return response.json();
                 })
                 .then((data) => {
-                    console.log(data);
                     setResults(data);
                     setLoading(false);
                 })
