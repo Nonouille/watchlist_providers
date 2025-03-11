@@ -8,28 +8,16 @@ const Header = () => {
                 <div className="flex items-center justify-between h-16">
                     <div className="flex-shrink-0">
                         <Link href="/" className="flex items-center">
-                            <span className="text-white text-xl font-bold">FilmChecker</span>
+                            <span className="text-white text-xlfont-bold">FilmChecker</span>
                         </Link>
                     </div>
                     
-                    <nav className="flex space-x-4">
+                    <nav className="flex space-x-2">
                         <Link 
                             href="/" 
                             className="text-white hover:bg-blue-700 hover:bg-opacity-50 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
                         >
                             Home
-                        </Link>
-                        <Link 
-                            href="/watchlist" 
-                            className="text-white hover:bg-blue-700 hover:bg-opacity-50 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-                        >
-                            Watchlist
-                        </Link>
-                        <Link 
-                            href="/popular" 
-                            className="text-white hover:bg-blue-700 hover:bg-opacity-50 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-                        >
-                            Popular
                         </Link>
                         <Link 
                             href="/about" 

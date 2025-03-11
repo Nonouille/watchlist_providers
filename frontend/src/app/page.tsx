@@ -20,10 +20,10 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-xl mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-4xl p-6">
-        <h3 className="text-xl font-bold text-center text-indigo-600 mb-2">Enter your Letterboxd username and country code</h3>
-        <form className="space-y-6">
+    <main className="flex flex-col min-h-screen w-full bg-gradient-to-br from-blue-100 to-indigo-100 py-8 px-4">
+      <div className="max-w-md mx-auto w-full bg-white rounded-xl shadow-md overflow-hidden p-5">
+        <h3 className="text-xl font-bold text-center text-indigo-600 mb-4">Enter your Letterboxd username and country code</h3>
+        <form className="space-y-5">
           <div className="space-y-2">
             <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username:</label>
             <input
@@ -55,10 +55,10 @@ export default function Home() {
             </select>
           </div>
 
-          <div className="pt-4">
-            <Link href="/providers">
+          <div className="pt-2">
+            <Link href="/providers" className="block w-full">
               <button
-                type="submit"
+                type="button"
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 Get your region&apos;s streaming providers
@@ -67,6 +67,6 @@ export default function Home() {
           </div>
         </form>
       </div>
-    </div>
+    </main>
   );
 }
