@@ -87,7 +87,7 @@ export default function Providers() {
                                 </div>
                             </div>
                         </div>
-                        <hr className="my-5 h-0.5 border-t-0 bg-gray-200" />
+                        <hr className="my-5 h-0.25 border-t-0 bg-gray-200" />
                         <h3 className="text-mg font-bold text-indigo-600 mb-3 mt-0">Your selected providers :</h3>
                         <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto mb-0">
                             {yourProviders.map((provider) => (
@@ -118,7 +118,7 @@ export default function Providers() {
                         <p className="text-lg text-gray-600">Loading providers...</p>
                     </div>
                 }
-                <hr className="my-5 h-0.5 border-t-0 bg-gray-200 " />     
+                <hr className="my-5 h-0.25 border-t-0 bg-gray-200 " />     
                 <Link href="/results" className="flex justify-center">
                     <button
                         type="button"
