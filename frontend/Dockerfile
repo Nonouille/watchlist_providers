@@ -10,7 +10,7 @@ RUN npm install
 # Copy only necessary files
 COPY next.config.ts ./
 COPY tsconfig.json ./
-COPY postcss.config.js ./
+COPY postcss.config.mjs ./
 COPY public ./public
 COPY src ./src
 
