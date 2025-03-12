@@ -19,7 +19,7 @@ export default function Providers() {
             router.push("/")
         }
         else {
-            fetch(`http://localhost:5000/your_providers?username=${username}&country_code=${countryCode}`, {
+            fetch(`http://backend:5000/your_providers?username=${username}&country_code=${countryCode}`, {
                 method: "GET",
             })
                 .then((response) => {
@@ -31,7 +31,7 @@ export default function Providers() {
                 .then((data) => {
                     setYourProviders(data.providers);
 
-                    fetch(`http://localhost:5000/get_region_providers?country_code=${countryCode}`, {
+                    fetch(`http://backend:5000/get_region_providers?country_code=${countryCode}`, {
                         method: "GET",
                     })
                         .then((response) => {
