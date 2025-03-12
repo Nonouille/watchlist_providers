@@ -1,7 +1,11 @@
 # backend/Dockerfile
-ARG FLASK_PORT
-
 FROM python:3.12-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -10,5 +14,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-EXPOSE ${FLASK_PORT}
-CMD ["python3", "main.py"]
+EXPOSE 5000
+# Added --access-logfile, --log-level, and --capture-output flags for logging
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--access-logfile", "-", "--log-level", "info", "--capture-output", "app.app:app"]

@@ -9,7 +9,7 @@ export default function Home() {
   const [regions, setRegions] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch("http://backend:5000/regions", {
+    fetch("http://localhost:5000/regions", {
       method: "GET",
     })
       .then((response) => response.json())

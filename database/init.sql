@@ -1,5 +1,3 @@
-\c checklist;
-
 CREATE TABLE "USER" (
     user_id SERIAL PRIMARY KEY,
     letterboxd_username VARCHAR,

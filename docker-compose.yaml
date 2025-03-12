@@ -1,43 +1,49 @@
-version: '3.8'
-
 services:
   db:
-    image: postgres:15
+    build: ./database
     container_name: film_checker_db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: checklist
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PORT: ${POSTGRES_PORT}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
+    networks:
+      - film_checker_front_back_network
 
   backend:
     build: ./backend
     container_name: film_checker_backend
     restart: unless-stopped
-    environment:
-      DB_HOST: db
-      DB_NAME: checklist
-      DB_USER: postgres
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_PORT: 5432
     ports:
       - "5000:5000"
     depends_on:
       - db
+    networks:
+      - film_checker_back_db_network
+      - film_checker_front_back_network
 
   frontend:
     build: ./frontend
     container_name: film_checker_frontend
     restart: unless-stopped
     ports:
-      - "80:3000"
+      - "80:80"
     depends_on:
       - backend
+    networks:
+      - film_checker_back_db_network
 
 volumes:
   postgres_data:
+
+networks:
+  film_checker_front_back_network:
+    driver: bridge
+  film_checker_back_db_network:
+    driver: bridge

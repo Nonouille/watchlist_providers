@@ -1,6 +1,4 @@
 # frontend/Dockerfile
-ARG NEXT_PORT
-
 # Builder
 FROM node:18-alpine AS builder
 
@@ -16,13 +14,13 @@ FROM node:18-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=${NEXT_PORT}
+ENV PORT=80
 
-COPY --from=builder /app/next.config.js ./
+COPY --from=builder /app/next.config.ts ./
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
-EXPOSE ${NEXT_PORT}
+EXPOSE 80
 CMD ["npm", "start"]

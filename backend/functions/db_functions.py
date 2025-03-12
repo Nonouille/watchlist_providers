@@ -14,10 +14,10 @@ def get_db_connection() -> psycopg2.extensions.connection:
     """
     global connection_pool
     if connection_pool is None:
-        DB_HOST = "localhost"
+        DB_HOST = "db"
         DB_NAME = "checklist"
         DB_USER = "postgres"
-        DB_PASSWORD = "root"
+        DB_PASSWORD = "postgres"
         DB_PORT = 5432
 
         connection_pool = psycopg2.pool.SimpleConnectionPool(
