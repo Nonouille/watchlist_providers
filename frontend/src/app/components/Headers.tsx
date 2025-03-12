@@ -6,10 +6,8 @@ const Header = () => {
         <header className="bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
-                    <div className="flex-shrink-0">
-                        <Link href="/" className="flex items-center">
-                            <span className="text-white text-xl font-bold">FilmChecker</span>
-                        </Link>
+                    <div className="flex-shrink-0 text-white text-xl font-bold">
+                        FilmChecker
                     </div>
                     
                     <nav className="flex space-x-2">

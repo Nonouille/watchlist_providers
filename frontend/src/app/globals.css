@@ -27,6 +27,11 @@ html, body {
   border-radius: 20px;
 }
 
+/* Prevent inline text changes on hover */
+span, p, div, h1, h2, h3, h4, h5, h6 {
+  cursor: default;
+}
+
 
 
 :root {

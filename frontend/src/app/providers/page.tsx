@@ -41,7 +41,7 @@ export default function Providers() {
                             return response.json();
                         })
                         .then((data) => {
-                            setRegionProviders(data.providers);
+                            setRegionProviders(data.providers.sort((a : string, b : string) => a.localeCompare(b)));
                             setLoading(false);
                         })
                         .catch((error) => console.error("Error fetching region providers:", error));
@@ -57,10 +57,8 @@ export default function Providers() {
                 {!loading ?
                     <div className="space-y-4">
                         <div className="relative">
+                        <h3 className="text-mg font-bold text-indigo-600 mb-3 mt-5">Add your providers :</h3>
                             <div className="flex items-center border border-gray-300 rounded-md focus-within:ring-indigo-500 focus-within:border-indigo-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                                </svg>
                                 <select
                                     className="w-full p-2 bg-white appearance-none focus:outline-none text-gray-700"
                                     onChange={(e) => {
@@ -73,7 +71,7 @@ export default function Providers() {
                                     }}
                                     defaultValue=""
                                 >
-                                    <option value="" disabled>Add your providers...</option>
+                                    <option value="">Select a providers...</option>
                                     {regionProviders
                                         .filter(provider => !yourProviders.includes(provider))
                                         .map((provider) => (
@@ -82,15 +80,16 @@ export default function Providers() {
                                             </option>
                                         ))}
                                 </select>
-                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                <div className="pointer-events-none absolute right-0 flex items-center px-2 text-gray-700">
                                     <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                                         <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
                                     </svg>
                                 </div>
                             </div>
                         </div>
-                        <h3 className="text-mg font-bold text-indigo-600 mb-1 mt-6">Your Selected Providers :</h3>
-                        <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                        <hr className="my-5 h-0.5 border-t-0 bg-gray-200" />
+                        <h3 className="text-mg font-bold text-indigo-600 mb-3 mt-0">Your selected providers :</h3>
+                        <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto mb-0">
                             {yourProviders.map((provider) => (
                                 <div key={provider} onClick={(e) => {
                                     e.preventDefault();
@@ -100,6 +99,18 @@ export default function Providers() {
                                 </div>
                             ))}
                         </div>
+
+                        <div className="mt-0">
+                            <div className="flex justify-end mr-20 ">
+                                <button
+                                    type="button"
+                                    onClick={() => setYourProviders([])}
+                                    className="py-1.5 px-3 border border-red-300 rounded-md shadow-md text-sm text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-red-500"
+                                >
+                                    Clear All Selected Providers
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     :
                     <div className="col-span-full flex flex-col items-center justify-center py-12">
@@ -107,10 +118,11 @@ export default function Providers() {
                         <p className="text-lg text-gray-600">Loading providers...</p>
                     </div>
                 }
-                <Link href="/results">
+                <hr className="my-5 h-0.5 border-t-0 bg-gray-200 " />     
+                <Link href="/results" className="flex justify-center">
                     <button
                         type="button"
-                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-4 cursor-pointer"
+                        className=" py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-4 cursor-pointer"
                     >
                         Get your watchlist streaming providers
                     </button>
