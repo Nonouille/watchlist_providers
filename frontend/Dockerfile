@@ -1,21 +1,30 @@
-# frontend/Dockerfile
-# Builder
+# Builder stage with memory optimizations
 FROM node:18-alpine AS builder
 
 WORKDIR /app
+
+# Copy package files first for better caching
 COPY package*.json ./
 RUN npm install
-COPY . .
 
+# Copy only necessary files
+COPY next.config.ts ./
+COPY tsconfig.json ./
+COPY public ./public
+COPY src ./src
+
+# Build with NODE_OPTIONS to limit memory usage
+ENV NODE_OPTIONS="--max_old_space_size=2048"
 RUN npm run build
 
-# Runner
+# Runner stage
 FROM node:18-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=80
 
+# Copy only the necessary files from the builder stage
 COPY --from=builder /app/next.config.ts ./
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
