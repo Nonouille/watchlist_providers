@@ -22,7 +22,7 @@ FROM node:18-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=80
+ENV PORT=3000
 
 # Copy only the necessary files from the builder stage
 COPY --from=builder /app/next.config.ts ./
@@ -31,5 +31,5 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
-EXPOSE 80
+EXPOSE 3000
 CMD ["npm", "start"]
