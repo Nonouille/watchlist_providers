@@ -9,7 +9,7 @@ export default function Home() {
   const [regions, setRegions] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/regions", {
+    fetch("https://cine.pyarnaud.studio/api/regions", {
       method: "GET",
     })
       .then((response) => response.json())

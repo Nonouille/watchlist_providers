@@ -17,7 +17,7 @@ export default function Result() {
             routeur.push("/");
         }
         else {
-            fetch(`http://localhost:5000/results`, {
+            fetch(`https://cine.pyarnaud.studio/api/results`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
