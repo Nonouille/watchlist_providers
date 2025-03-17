@@ -1,0 +1,250 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Letteboxd Watchlist Providers API",
+        "description": "This API fetch your Letterboxd watchlist and filter the results based on your providers selection. Usefull when you have multiple streaming services and want to know where to watch a movie or to find the ones available in your region in your watchlist.",
+        "version": "1.0.0",
+        "contact": {
+            "name": "Creator",
+            "email": "arnaudpy314@gmail.com"
+        }
+    },
+    "servers": [
+        {
+            "url": "https://cine.pyarnaud.studio/api",
+            "description": "Production server"
+        },
+        {
+            "url": "http://localhost:5000",
+            "description": "Development server"
+        }
+    ],
+
+    "paths": {
+      "/": {
+        "get": {
+          "responses": {
+            "200": {
+              "description": "API status message"
+            }
+          },
+          "summary": "API Status",
+          "tags": [
+            "API status"
+          ]
+        }
+      },
+      "/get_region_providers": {
+        "get": {
+          "parameters": [
+            {
+              "description": "The country code (ISO 3166-1 alpha-2)",
+              "example": "FR",
+              "in": "query",
+              "name": "country_code",
+              "required": true,
+              "type": "string"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "A list of all streaming providers available in the specified region",
+              "schema": {
+                "properties": {
+                  "country_code": {
+                    "example": "FR",
+                    "type": "string"
+                  },
+                  "providers": {
+                    "example": [
+                      "Netflix",
+                      "Amazon Prime Video",
+                      "Disney+"
+                    ],
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "400": {
+              "description": "Missing or invalid country_code parameter"
+            }
+          },
+          "summary": "Get all streaming providers available in a specific region.",
+          "tags": [
+            "Providers"
+          ]
+        }
+      },
+      "/regions": {
+        "get": {
+          "responses": {
+            "200": {
+              "description": "A list of all available regions",
+              "schema": {
+                "properties": {
+                  "regions": {
+                    "example": [
+                      "US",
+                      "FR",
+                      "DE",
+                      "GB"
+                    ],
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "summary": "Get a list of all available regions/countries.",
+          "tags": [
+            "Regions"
+          ]
+        }
+      },
+      "/results": {
+        "post": {
+          "parameters": [
+            {
+              "in": "body",
+              "name": "body",
+              "required": true,
+              "schema": {
+                "properties": {
+                  "country_code": {
+                    "description": "The country code (ISO 3166-1 alpha-2)",
+                    "example": "FR",
+                    "type": "string"
+                  },
+                  "providers": {
+                    "description": "List of selected provider IDs",
+                    "example": [8, 119, 337],
+                    "items": {
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  },
+                  "refresh": {
+                    "default": false,
+                    "description": "Force refresh of watchlist data",
+                    "example": true,
+                    "type": "boolean"
+                  },
+                  "username": {
+                    "description": "The username of the user",
+                    "example": "nonouille92",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "username",
+                  "country_code"
+                ],
+                "type": "object"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Filtered watchlist results",
+              "schema": {
+                "items": {
+                  "properties": {
+                    "id": {
+                      "example": 550,
+                      "type": "integer"
+                    },
+                    "providers": {
+                      "example": [8, 119],
+                      "items": {
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "title": {
+                      "example": "Fight Club",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "400": {
+              "description": "Missing or invalid parameters"
+            },
+            "500": {
+              "description": "Server error retrieving data"
+            }
+          },
+          "summary": "Get filtered results from a user's watchlist based on selected providers.",
+          "tags": [
+            "Results"
+          ]
+        }
+      },
+      "/your_providers": {
+        "get": {
+          "parameters": [
+            {
+              "description": "The username of the user",
+              "example": "nonouille92",
+              "in": "query",
+              "name": "username",
+              "required": true,
+              "type": "string"
+            },
+            {
+              "description": "The country code (ISO 3166-1 alpha-2)",
+              "example": "FR",
+              "in": "query",
+              "name": "country_code",
+              "required": true,
+              "type": "string"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "A list of the user's selected providers",
+              "schema": {
+                "properties": {
+                  "providers": {
+                    "example": [
+                      {
+                        "provider_id": 8,
+                        "provider_name": "Netflix"
+                      }
+                    ],
+                    "items": {
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "400": {
+              "description": "Missing or invalid parameters"
+            },
+            "500": {
+              "description": "Server error retrieving user data from the database"
+            }
+          },
+          "summary": "Get the user's selected providers for a specific country.",
+          "tags": [
+            "Providers"
+          ]
+        }
+      }
+    }
+  }
