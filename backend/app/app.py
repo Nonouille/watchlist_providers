@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_swagger_ui import get_swaggerui_blueprint
@@ -29,15 +30,9 @@ API_URL = "/static/swagger.json"
 swaggerui_blueprint = get_swaggerui_blueprint(
     SWAGGER_URL, 
     API_URL, 
-    config={
-        "app_name": "Watchlist API",
-        "swagger_ui_bundle_js": "/api/swagger/swagger-ui-bundle.js",
-        "swagger_ui_standalone_preset_js": "/api/swagger/swagger-ui-standalone-preset.js",
-        "swagger_ui_css": "/api/swagger/swagger-ui.css",
-        "index_css": "/api/swagger/index.css"
-    }
+    config={"app_name": "Watchlist API"}
 )
-app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL, template_file_path="./static/swagger-template.html")
 
 region_list = get_all_regions()
 
