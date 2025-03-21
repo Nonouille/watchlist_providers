@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://cine.pyarnaud.studio/</loc>
+    <lastmod>2025-03-17</lastmod>
+  </url>
+  <url>
+    <loc>https://cine.pyarnaud.studio/providers/</loc>
+    <lastmod>2025-03-17</lastmod>
+  </url>
+  <url>
+    <loc>https://cine.pyarnaud.studio/results/</loc>
+    <lastmod>2025-03-17</lastmod>
+  </url>
+  <url>
+    <loc>https://cine.pyarnaud.studio/about/</loc>
+    <lastmod>2025-03-17</lastmod>
+  </url>
+  <url>
+    <loc>https://cine.pyarnaud.studio/docs/</loc>
+    <lastmod>2025-03-17</lastmod>
+  </url>
+  <url>
+    <loc>https://cine.pyarnaud.studio/api/</loc>
+    <lastmod>2025-03-17</lastmod>
+  </url>
+</urlset>
