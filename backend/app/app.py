@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_swagger_ui import get_swaggerui_blueprint
 from functions.db_functions import (
     get_userID,
@@ -27,12 +27,21 @@ CORS(app)
 
 SWAGGER_URL = "/swagger"
 API_URL = "/static/swagger.json"
+
+template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'swagger-template.html')
+
 swaggerui_blueprint = get_swaggerui_blueprint(
     SWAGGER_URL, 
     API_URL, 
-    config={"app_name": "Watchlist API"}
+    config={"app_name": "Watchlist API", "oauth2RedirectUrl": "/api/swagger/oauth2-redirect.html"},
+    template_path=template_path
 )
-app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL, template_file_path="./static/swagger-template.html")
+app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+
+@app.route('/swagger/<path:path>')
+def serve_swagger_ui(path):
+    swagger_ui_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'swagger')
+    return send_from_directory(swagger_ui_path, path)
 
 region_list = get_all_regions()
 
