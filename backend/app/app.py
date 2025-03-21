@@ -34,7 +34,7 @@ swaggerui_blueprint = get_swaggerui_blueprint(
     SWAGGER_URL, 
     API_URL, 
     config={"app_name": "Watchlist API", "oauth2RedirectUrl": "/api/swagger/oauth2-redirect.html"},
-    template_path=template_path
+    template_file=template_path
 )
 app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
