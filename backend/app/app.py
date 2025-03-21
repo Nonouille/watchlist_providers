@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify
 from flask_swagger_ui import get_swaggerui_blueprint
 from functions.db_functions import (
     get_userID,
@@ -20,13 +20,14 @@ from functions.fetch_functions import (
 )
 from flask_cors import CORS
 
-app = Flask(__name__, static_folder='static')
+app = Flask(__name__, static_folder='static', static_url_path='/static')
+app.config["APPLICATION_ROOT"] = "/api"
 CORS(app)
 
-SWAGGER_URL = "/swagger/"
+SWAGGER_URL = "/swagger"
 API_URL = "/static/swagger.json"
 swaggerui_blueprint = get_swaggerui_blueprint(
-    SWAGGER_URL, API_URL, config={"app_name": "Watchlist API", "swaggerUiPrefix": "/api"}
+    SWAGGER_URL, API_URL, config={"app_name": "Watchlist API"}
 )
 app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
