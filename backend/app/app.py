@@ -33,7 +33,8 @@ swaggerui_blueprint = get_swaggerui_blueprint(
         "app_name": "Watchlist API",
         "swagger_ui_bundle_js": "/api/swagger/swagger-ui-bundle.js",
         "swagger_ui_standalone_preset_js": "/api/swagger/swagger-ui-standalone-preset.js",
-        "swagger_ui_css": "/api/swagger/swagger-ui.css"
+        "swagger_ui_css": "/api/swagger/swagger-ui.css",
+        "index_css": "/api/swagger/index.css"
     }
 )
 app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
