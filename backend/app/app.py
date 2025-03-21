@@ -23,10 +23,10 @@ from flask_cors import CORS
 app = Flask(__name__, static_folder='static')
 CORS(app)
 
-SWAGGER_URL = "/docs/"
+SWAGGER_URL = "/swagger/"
 API_URL = "/static/swagger.json"
 swaggerui_blueprint = get_swaggerui_blueprint(
-    SWAGGER_URL, API_URL, config={"app_name": "Watchlist API"}
+    SWAGGER_URL, API_URL, config={"app_name": "Watchlist API", "swaggerUiPrefix": "/api"}
 )
 app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
