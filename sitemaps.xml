@@ -24,4 +24,8 @@
     <loc>https://cine.pyarnaud.studio/api/</loc>
     <lastmod>2025-03-17</lastmod>
   </url>
+  <url>
+    <loc>https://cine.pyarnaud.studio/conf/sitemaps.xml</loc>
+    <lastmod>2025-03-17</lastmod>
+  </url>
 </urlset>
