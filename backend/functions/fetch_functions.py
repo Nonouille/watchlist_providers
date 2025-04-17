@@ -1,12 +1,21 @@
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import quote
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
+# Load environment variables from .env file
+TMDB_TOKEN = os.getenv("TMDB_TOKEN")
+if TMDB_TOKEN is None:
+    raise ValueError(
+        "TMDB_TOKEN environment variable not set. Please set it in your .env file."
+    )
+# Set the headers for the requests
 headers = {
     "accept": "application/json",
-    "Authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYzUwMDE0OGU5ODYxMGFjNjI4ZTc3N2QxMTgwZDQxNyIsIm5iZiI6MTczNzU1NTg1Mi40OTcsInN1YiI6IjY3OTBmZjhjYmE0Njk5MGY1NGRmZjZhZSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.oUTZhoCrugczQbR02PA2h-ZGOpSjR5EIS9IL6nva63E",
+    "Authorization": f"Bearer {TMDB_TOKEN}",
 }
-
 
 def get_watchlist(username: str) -> list:
     """

@@ -3,9 +3,23 @@ from psycopg2 import pool
 import json
 from datetime import datetime
 import contextlib
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Load environment variables from .env file
+DB_HOST = os.getenv("DB_HOST")
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_PORT = os.getenv("DB_PORT", 5432) 
+if DB_HOST is None or DB_NAME is None or DB_USER is None or DB_PASSWORD is None or DB_PORT is None:
+    raise ValueError(
+        "Database environment variables not set. Please set them in your .env file."
+    )
 
 connection_pool = None
-
 
 def get_db_connection() -> psycopg2.extensions.connection:
     """
@@ -14,11 +28,11 @@ def get_db_connection() -> psycopg2.extensions.connection:
     """
     global connection_pool
     if connection_pool is None:
-        DB_HOST = "db"
-        DB_NAME = "checklist"
-        DB_USER = "postgres"
-        DB_PASSWORD = "postgres"
-        DB_PORT = 5432
+        DB_HOST = DB_HOST
+        DB_NAME = DB_NAME
+        DB_USER = DB_USER
+        DB_PASSWORD = DB_PASSWORD
+        DB_PORT = DB_PORT
 
         connection_pool = psycopg2.pool.SimpleConnectionPool(
             1,
