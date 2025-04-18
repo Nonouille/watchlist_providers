@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import React from 'react';
 
-const Header = () => {
+export const Header = () => {
     return (
         <header className="bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -29,5 +29,3 @@ const Header = () => {
         </header>
     );
 };
-
-export default Header;
