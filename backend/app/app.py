@@ -55,9 +55,7 @@ def get_your_providers():
     if user_ID == -1:
         return "Error: failed to retrieve user ID", 500
 
-    print("user_ID", user_ID)
     providers = get_user_providers(user_ID, country_code)
-    print("providers", providers)
 
     return {"providers": providers}
 

@@ -28,12 +28,6 @@ def get_db_connection() -> psycopg2.extensions.connection:
     """
     global connection_pool
     if connection_pool is None:
-        DB_HOST = DB_HOST
-        DB_NAME = DB_NAME
-        DB_USER = DB_USER
-        DB_PASSWORD = DB_PASSWORD
-        DB_PORT = DB_PORT
-
         connection_pool = psycopg2.pool.SimpleConnectionPool(
             1,
             10,
