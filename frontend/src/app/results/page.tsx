@@ -4,10 +4,11 @@ import Link from "next/link";
 import { ResultCard } from '@/app/components/ResultCard';
 import { useResearch } from '@/app/context/ResearchContext';
 import { useRouter } from 'next/navigation';
+import { Film } from '../types/Film';
 
 export default function Result() {
     const { username, countryCode, yourProviders, refresh } = useResearch();
-    const [results, setResults] = useState([]);
+    const [results, setResults] = useState<Film[]>([]);
     const [loading, setLoading] = useState(false);
     const routeur = useRouter();
 
@@ -36,6 +37,7 @@ export default function Result() {
                     return response.json();
                 })
                 .then((data) => {
+                    data.sort((a: Film, b: Film) => b.note - a.note);
                     setResults(data);
                     setLoading(false);
                 })
