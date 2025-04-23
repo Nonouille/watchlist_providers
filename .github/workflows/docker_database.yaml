@@ -3,8 +3,8 @@ name: Docker Database Image CD
 on:
   push:
     branches: [ "main" ]
-    #paths:
-    #  - 'database/**'
+    paths:
+      - 'database/**'
   pull_request:
     branches: [ "main" ]
     paths:
