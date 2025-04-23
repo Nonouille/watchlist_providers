@@ -1,10 +1,10 @@
-name: Docker Image CI
+name: Docker Frontend Image CD
 
 on:
   push:
     branches: [ "main" ]
-    paths:
-      - 'frontend/**'
+    #paths:
+    #  - 'frontend/**'
   pull_request:
     branches: [ "main" ]
     paths:
