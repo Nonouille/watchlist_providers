@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote
 import os
 from dotenv import load_dotenv
+from playwright.sync_api import Playwright, sync_playwright, expect
 dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
 load_dotenv(dotenv_path)
 
@@ -20,43 +21,41 @@ headers = {
 
 def get_watchlist(username: str) -> list:
     """
-    Retrieve the watchlist of a Letterboxd user.
+    Retrieve the watchlist of a Letterboxd user by running the letterboxd_scrapper Docker image.
     """
-    watchlist = []
-    page = 1
-
-    while True:
-        url = f"https://letterboxd.com/{username}/watchlist/page/{page}/"
-        response = requests.get(url)
-
-        if response.status_code != 200:
-            raise Exception(
-                f"Failed to retrieve watchlist for user {username}. HTTP Status Code: {response.status_code}"
-            )
-
-        soup = BeautifulSoup(response.text, "html.parser")
-        films = soup.find_all("li", class_="poster-container")
-
-        if not films:
-            break
-
-        for film in films:
-            title = film.find("img")["alt"]
-            infos = film.find("div", class_="film-poster")["data-film-slug"]
-            if (
-                len(infos.split("-")[-1]) == 4
-                and infos.split("-")[-1].isnumeric()
-                and title[-4:] != infos.split("-")[-1]
-            ):
-                date = int(infos.split("-")[-1])
-                watchlist.append({"title": title, "date": date})
-            else:
-                watchlist.append({"title": title})
-
-        page += 1
-
+    with sync_playwright() as playwright:
+        watchlist = []
+        
+        print(f"Scraping watchlist for user: {username}")
+        
+        browser = playwright.chromium.launch(headless=True)
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+        )
+        page = context.new_page()
+        
+        # Visit the user's watchlist page
+        page.goto(f"https://letterboxd.com/{username}/watchlist/", timeout=60000)
+        last_page = get_last_page_number(page)
+        print(f"Found {last_page} page(s) for {username}'s watchlist")
+        extract_films(page,watchlist)
+        
+        # Loop through the pages
+        if last_page > 1:
+            for i in range(2, last_page + 1):
+                page.goto(f"https://letterboxd.com/{username}/watchlist/page/{i}")
+                # Increase timeout to avoid rate limiting
+                page.wait_for_timeout(1500)
+                extract_films(page,watchlist)
+        
+        # Print results
+        print(f"Total films collected: {len(watchlist)}")
+        
+        # Close the browser and context
+        context.close()
+        browser.close()
+        
     return watchlist
-
 
 def get_ids(watchlist: list) -> list:
     """
@@ -181,3 +180,75 @@ def get_all_regions() -> list:
     for region in data["results"]:
         regions.append(region["iso_3166_1"])
     return regions
+
+
+def extract_films(page, watchlist: list):
+    page.wait_for_selector("ul.poster-list li.poster-container")
+    
+    # Get all film containers on the page
+    film_containers = page.query_selector_all("ul.poster-list li.poster-container")
+    
+    for film in film_containers:
+        try:
+            # Extract film title from alt attribute
+            poster_img = film.query_selector("div.film-poster img")
+            if not poster_img:
+                continue
+                
+            title = poster_img.get_attribute("alt")
+            
+            # Extract film slug and year
+            poster_div = film.query_selector("div.film-poster")
+            if not poster_div:
+                continue
+                
+            film_slug = poster_div.get_attribute("data-film-slug")
+            
+            # Check if there's a year in the slug
+            year = None
+            if film_slug:
+                parts = film_slug.split("-")
+                if len(parts) > 0 and len(parts[-1]) == 4 and parts[-1].isdigit():
+                    year = int(parts[-1])
+            
+            # Check if this film has been rated by owner
+            owner_rating = film.get_attribute("data-owner-rating")
+            rating = int(owner_rating) if owner_rating and owner_rating != "0" else None
+            
+            # Build film info
+            film_info = {
+                "title": title,
+            }
+            
+            if year:
+                film_info["year"] = year
+                
+            if rating:
+                film_info["rating"] = rating
+                
+            # Add to watchlist
+            watchlist.append(film_info)
+            
+        except Exception as e:
+            print(f"Error extracting film: {e}")
+
+
+def get_last_page_number(page):
+    try:
+        page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+        # Wait for pagination to load
+        page.wait_for_selector("div.paginate-pages", timeout=10000)
+        
+        # Find the last paginate-page element
+        last_paginate_item = page.query_selector("li.paginate-page:last-child a")
+    
+        # Extract the page number from the last element
+        if last_paginate_item:
+            try:
+                page_text = last_paginate_item.inner_text()
+                if page_text.isdigit():
+                    return int(page_text)
+            except:
+                pass
+    except:
+        return 1

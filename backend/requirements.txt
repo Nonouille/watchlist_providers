@@ -6,3 +6,4 @@ Flask-Cors
 gunicorn==21.2.0
 flask-swagger-ui
 dotenv
+playwright==1.42.0
