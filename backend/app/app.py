@@ -34,14 +34,13 @@ swaggerui_blueprint = get_swaggerui_blueprint(
 )
 app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
-region_list = get_all_regions()
-
 @app.route("/", methods=["GET"])
 def get_home():
     return jsonify({"message" : "Boum boum, server is running !"})
 
 @app.route("/your_providers", methods=["GET"])
 def get_your_providers():
+    region_list = get_all_regions()
     username = request.args.get("username")
     country_code = request.args.get("country_code")
     if not country_code:
@@ -80,6 +79,7 @@ def get_regions():
 
 @app.route("/results", methods=["POST"])
 def results():
+    region_list = get_all_regions()
     data = request.json
     username = data.get("username")
     country_code = data.get("country_code")
