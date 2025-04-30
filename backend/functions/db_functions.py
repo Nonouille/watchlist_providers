@@ -15,7 +15,7 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_PORT = os.getenv("DB_PORT", 5432) 
 if DB_HOST is None or DB_NAME is None or DB_USER is None or DB_PASSWORD is None or DB_PORT is None:
-    raise ValueError(
+    print(
         "Database environment variables not set. Please set them in your .env file."
     )
 

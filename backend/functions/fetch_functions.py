@@ -10,7 +10,7 @@ load_dotenv(dotenv_path)
 # Load environment variables from .env file
 TMDB_TOKEN = os.getenv("TMDB_TOKEN")
 if TMDB_TOKEN is None:
-    raise ValueError(
+    print(
         "TMDB_TOKEN environment variable not set. Please set it in your .env file."
     )
 # Set the headers for the requests
