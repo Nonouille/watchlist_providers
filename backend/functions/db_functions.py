@@ -5,19 +5,29 @@ from datetime import datetime
 import contextlib
 import os
 from dotenv import load_dotenv
+# Try to load from .env file first (for local development)
 dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
-load_dotenv(dotenv_path)
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
 
-# Load environment variables from .env file
-DB_HOST = os.getenv("DB_HOST")
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_PORT = os.getenv("DB_PORT", 5432) 
-if DB_HOST is None or DB_NAME is None or DB_USER is None or DB_PASSWORD is None or DB_PORT is None:
-    print(
-        "Database environment variables not set. Please set them in your .env file."
-    )
+# Load environment variables - will get from container environment if set there
+POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
+POSTGRES_DB = os.getenv("POSTGRES_DB")  # Corrected from POSTGRES_NAME to match docker-compose
+POSTGRES_USER = os.getenv("POSTGRES_USER")  # Fixed typo in POSGRES_USER
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
+
+# Check if critical environment variables are missing
+missing_vars = []
+if not POSTGRES_HOST: missing_vars.append("POSTGRES_HOST")
+if not POSTGRES_DB: missing_vars.append("POSTGRES_DB")
+if not POSTGRES_USER: missing_vars.append("POSTGRES_USER")
+if not POSTGRES_PASSWORD: missing_vars.append("POSTGRES_PASSWORD")
+if not POSTGRES_PORT: missing_vars.append("POSTGRES_PORT")
+
+if missing_vars:
+    print(f"Missing database environment variables: {', '.join(missing_vars)}")
+    print("Please set them in your .env file or container environment.")
 
 connection_pool = None
 
@@ -31,11 +41,11 @@ def get_db_connection() -> psycopg2.extensions.connection:
         connection_pool = psycopg2.pool.SimpleConnectionPool(
             1,
             10,
-            host=DB_HOST,
-            database=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            port=DB_PORT,
+            host=POSTGRES_HOST,
+            database=POSTGRES_DB,
+            user=POSTGRES_USER,
+            password=POSTGRES_PASSWORD,
+            port=POSTGRES_PORT,
         )
     return connection_pool.getconn()
 

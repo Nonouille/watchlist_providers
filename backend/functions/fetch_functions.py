@@ -3,17 +3,18 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote
 import os
 from dotenv import load_dotenv
-from playwright.sync_api import Playwright, sync_playwright, expect
-dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
-load_dotenv(dotenv_path)
+from playwright.sync_api import Playwright, sync_playwright
 
-# Load environment variables from .env file
+dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
+
 TMDB_TOKEN = os.getenv("TMDB_TOKEN")
 if TMDB_TOKEN is None:
     print(
-        "TMDB_TOKEN environment variable not set. Please set it in your .env file."
+        "TMDB_TOKEN environment variable not set. Please set it in your .env file or container environment."
     )
-# Set the headers for the requests
+
 headers = {
     "accept": "application/json",
     "Authorization": f"Bearer {TMDB_TOKEN}",
