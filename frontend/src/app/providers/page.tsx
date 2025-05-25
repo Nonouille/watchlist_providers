@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useResearch } from "../context/ResearchContext";
 import Link from "next/link";
+import { API_BASE_URL } from '@/app/config/config';
 
 export default function Providers() {
 
@@ -19,7 +20,7 @@ export default function Providers() {
             router.push("/")
         }
         else {
-            fetch(`https://cine.pyarnaud.studio/api/your_providers?username=${username}&country_code=${countryCode}`, {
+            fetch(`${API_BASE_URL}/your_providers?username=${username}&country_code=${countryCode}`, {
                 method: "GET",
             })
                 .then((response) => {
@@ -29,9 +30,11 @@ export default function Providers() {
                     return response.json();
                 })
                 .then((data) => {
-                    setYourProviders(data.providers);
+                    if (data.providers) {
+                        setYourProviders(data.providers);
+                    }
 
-                    fetch(`https://cine.pyarnaud.studio/api/get_region_providers?country_code=${countryCode}`, {
+                    fetch(`${API_BASE_URL}/get_region_providers?country_code=${countryCode}`, {
                         method: "GET",
                     })
                         .then((response) => {
@@ -64,7 +67,7 @@ export default function Providers() {
                                     onChange={(e) => {
                                         if (e.target.value !== "") {
                                             const provider = e.target.value;
-                                            if (!yourProviders.includes(provider)) {
+                                            if (yourProviders && !yourProviders.includes(provider)) {
                                                 setYourProviders([...yourProviders, provider]);
                                             }
                                         }
@@ -73,7 +76,7 @@ export default function Providers() {
                                 >
                                     <option value="">Select a providers...</option>
                                     {regionProviders
-                                        .filter(provider => !yourProviders.includes(provider))
+                                        .filter(provider => yourProviders && !yourProviders.includes(provider))
                                         .map((provider) => (
                                             <option key={provider} value={provider}>
                                                 {provider}
@@ -90,7 +93,7 @@ export default function Providers() {
                         <hr className="my-5 h-0.25 border-t-0 bg-gray-200 dark:bg-gray-700" />
                         <h3 className="text-mg font-bold text-indigo-600 dark:text-indigo-300 mb-3 mt-0">Your selected providers :</h3>
                         <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto mb-0">
-                            {yourProviders.map((provider) => (
+                            {yourProviders && yourProviders.map((provider) => (
                                 <div key={provider} onClick={(e) => {
                                     e.preventDefault();
                                     setYourProviders(yourProviders.filter(p => p !== provider));

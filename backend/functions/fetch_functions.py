@@ -62,6 +62,7 @@ def get_ids(watchlist: list) -> list:
     Retrieve the film id and note from The Movie Database API.
     """
     indexed_watchlist = []
+    genres = get_genres_id()
     for index, film in enumerate(watchlist):
         title_url_compatible = quote(film["title"])
         if "date" in film:
@@ -85,6 +86,7 @@ def get_ids(watchlist: list) -> list:
             watchlist[index]["id"] = data["results"][0]["id"]
             watchlist[index]["note"] = round(data["results"][0]["vote_average"], 1)
             watchlist[index]["date"] = data["results"][0]["release_date"].split("-")[0]
+            watchlist[index]["genres"] = [genres[genre_id] for genre_id in data["results"][0]["genre_ids"] if genre_id in genres]
             indexed_watchlist.append(watchlist[index])
         indexed_watchlist.sort(key=lambda x: x.get("note", 0), reverse=True)
 
@@ -252,3 +254,20 @@ def get_last_page_number(page):
                 pass
     except:
         return 1
+    
+def get_genres_id() -> dict:
+    """
+    Retrieve the genres from The Movie Database API.
+    """
+    response = requests.get(
+        "https://api.themoviedb.org/3/genre/movie/list?language=en-US", headers=headers
+    )
+    if response.status_code != 200:
+        raise Exception(
+            f"Failed to retrieve the genres. HTTP Status Code: {response.status_code}"
+        )
+    data = response.json()
+    genres = {}
+    for genre in data["genres"]:
+        genres[genre["id"]] = genre["name"]
+    return genres

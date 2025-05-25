@@ -9,12 +9,14 @@
     "front": "cd frontend && npm start",
     "back": "cd backend && python main.py",
     "build": "cd frontend && npm run build"
-
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
     "concurrently": "^9.1.2"
+  },
+  "dependencies": {
+    "playwright": "^1.52.0"
   }
 }

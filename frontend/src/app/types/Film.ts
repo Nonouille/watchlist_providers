@@ -4,4 +4,5 @@ export interface Film {
     title: string;
     note: number;
     providers: string[];
+    genres: string[];
 }

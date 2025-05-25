@@ -17,6 +17,7 @@ CREATE TABLE "FILM"(
     providers VARCHAR,
     date INT,
     country_code VARCHAR,
+    genres VARCHAR,
     user_id INT,
     FOREIGN KEY (user_id) REFERENCES "USER"(user_id)
 );

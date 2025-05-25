@@ -152,7 +152,7 @@ def modify_film(cursor, user_ID: str, country_code: str, films: list):
         # Si le film n'existe pas dans la BDD, insertion
         if not any(film["title"] == row[1] for row in existing_films):
             cursor.execute(
-                'INSERT INTO "FILM" (user_ID, country_code, film_id, title, grade, providers, date) VALUES (%s, %s, %s, %s, %s, %s, %s)',
+                'INSERT INTO "FILM" (user_ID, country_code, film_id, title, grade, providers, date, genres) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)',
                 (
                     user_ID,
                     country_code,
@@ -161,6 +161,7 @@ def modify_film(cursor, user_ID: str, country_code: str, films: list):
                     film["note"],
                     json.dumps(film["providers"]),
                     film["date"],
+                    json.dumps(film.get("genres", []) if film.get("genres") else [])
                 ),
             )
         else:
@@ -245,7 +246,7 @@ def get_user_results(cursor, user_ID: str, country_code: str) -> list:
     Retourne la liste des films pour l'utilisateur et le pays donné.
     """
     cursor.execute(
-        'SELECT film_ID, title, grade, providers, date FROM "FILM" WHERE user_ID = %s AND country_code = %s',
+        'SELECT film_ID, title, grade, providers, date, genres FROM "FILM" WHERE user_ID = %s AND country_code = %s',
         (user_ID, country_code),
     )
     result = cursor.fetchall()
@@ -258,6 +259,7 @@ def get_user_results(cursor, user_ID: str, country_code: str) -> list:
                 "note": row[2],
                 "providers": json.loads(row[3]),
                 "date": row[4],
+                "genres": json.loads(row[5]) if row[5] else [],
             }
         )
     return films

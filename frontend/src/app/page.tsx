@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useResearch } from '@/app/context/ResearchContext';
 import Link from 'next/link';
+import { API_BASE_URL } from '@/app/config/config';
 
 export default function Home() {
 
@@ -9,7 +10,7 @@ export default function Home() {
   const [regions, setRegions] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch("https://cine.pyarnaud.studio/api/regions", {
+    fetch(`${API_BASE_URL}/regions`, {
       method: "GET",
     })
       .then((response) => response.json())

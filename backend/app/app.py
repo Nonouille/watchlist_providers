@@ -17,6 +17,7 @@ from functions.fetch_functions import (
     get_all_regions,
     get_region_providers,
     sort_watchlist,
+    get_genres_id,
 )
 from flask_cors import CORS
 
@@ -76,6 +77,11 @@ def get_get_region_providers():
 def get_regions():
     regions = get_all_regions()
     return {"regions": regions}
+
+@app.route("/genres", methods=["GET"])
+def get_genres():
+    genres = get_genres_id()
+    return {"genres": list(genres.values())}
 
 @app.route("/results", methods=["POST"])
 def results():

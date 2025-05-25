@@ -10,6 +10,13 @@ export const ResultCard = ({ films }: { films: Film[] }) => {
                         <h3 className="text-l font-bold text-gray-800 dark:text-white mb-1 break-words">{film.title}</h3>
                         <div className="text-sm text-gray-600 dark:text-gray-300 mb-0">{film.date}</div>
                         <div className="text-sm text-indigo-300 dark:text-indigo-300 mb-0">{film.note}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            {film.genres.map((genre, index) => (
+                                <span key={index} className="pr-1">
+                                    {genre.charAt(0).toUpperCase() + genre.slice(1)}
+                                </span>
+                            ))}
+                        </div>
                     </div>
                     <div className="flex w-full flex-row sm:flex-col gap-2 flex-wrap mt-2 sm:mt-0">
                         <div className="flex w-full gap-2 justify-end items-end flex-col sm:items-end">
