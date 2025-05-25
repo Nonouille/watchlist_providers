@@ -6,7 +6,10 @@ import contextlib
 import os
 from dotenv import load_dotenv
 # Try to load from .env file first (for local development)
+# Try to load from .env file first (for local development)
 dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
 if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
 

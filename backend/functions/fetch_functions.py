@@ -8,10 +8,13 @@ from playwright.sync_api import Playwright, sync_playwright
 dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
 if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
 
 TMDB_TOKEN = os.getenv("TMDB_TOKEN")
 if TMDB_TOKEN is None:
     print(
+        "TMDB_TOKEN environment variable not set. Please set it in your .env file or container environment."
         "TMDB_TOKEN environment variable not set. Please set it in your .env file or container environment."
     )
 
