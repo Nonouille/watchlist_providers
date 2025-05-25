@@ -5,19 +5,28 @@ from datetime import datetime
 import contextlib
 import os
 from dotenv import load_dotenv
+# Try to load from .env file first (for local development)
 dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
-load_dotenv(dotenv_path)
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
 
-# Load environment variables from .env file
-DB_HOST = os.getenv("DB_HOST")
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_PORT = os.getenv("DB_PORT", 5432) 
-if DB_HOST is None or DB_NAME is None or DB_USER is None or DB_PASSWORD is None or DB_PORT is None:
-    print(
-        "Database environment variables not set. Please set them in your .env file."
-    )
+# Load environment variables - will get from container environment if set there
+DB_HOST = os.getenv("POSTGRES_HOST", "localhost")
+DB_NAME = os.getenv("POSTGRES_DB")  # Corrected from POSTGRES_NAME to match docker-compose
+DB_USER = os.getenv("POSTGRES_USER")  # Fixed typo in POSGRES_USER
+DB_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+DB_PORT = os.getenv("POSTGRES_PORT", "5432")
+
+# Check if critical environment variables are missing
+missing_vars = []
+if not DB_HOST: missing_vars.append("POSTGRES_HOST")
+if not DB_NAME: missing_vars.append("POSTGRES_DB")
+if not DB_USER: missing_vars.append("POSTGRES_USER")
+if not DB_PASSWORD: missing_vars.append("POSTGRES_PASSWORD")
+
+if missing_vars:
+    print(f"Missing database environment variables: {', '.join(missing_vars)}")
+    print("Please set them in your .env file or container environment.")
 
 connection_pool = None
 

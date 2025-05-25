@@ -4,14 +4,16 @@ from urllib.parse import quote
 import os
 from dotenv import load_dotenv
 from playwright.sync_api import Playwright, sync_playwright, expect
+# Try to load from .env file first (for local development)
 dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
-load_dotenv(dotenv_path)
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
 
-# Load environment variables from .env file
-TMDB_TOKEN = os.getenv("TMDB_TOKEN")
+# Load environment variables - will get from container environment if set there
+TMDB_TOKEN = os.getenv("TMDB_TOKEN") or os.getenv("TMDB_API_KEY")  # Try both variable names
 if TMDB_TOKEN is None:
     print(
-        "TMDB_TOKEN environment variable not set. Please set it in your .env file."
+        "TMDB_TOKEN environment variable not set. Please set it in your .env file or container environment."
     )
 # Set the headers for the requests
 headers = {
