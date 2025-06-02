@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from playwright.sync_api import Playwright, sync_playwright
 
-dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env')
 if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
 if os.path.exists(dotenv_path):
