@@ -29,6 +29,7 @@ jobs:
           SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
           ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
+          cd /home/arnaud/watchlist_providers/
           docker-compose down
           docker system prune -f
           docker-compose up -d --build
