@@ -32,5 +32,6 @@ jobs:
           cd /home/arnaud/watchlist_providers/
           docker-compose down
           docker system prune -f
+          docker image prune -a
           docker-compose up -d --build
           EOF
