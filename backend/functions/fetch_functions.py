@@ -49,7 +49,7 @@ def get_watchlist(username: str) -> list:
             for i in range(2, last_page + 1):
                 page.goto(f"https://letterboxd.com/{username}/watchlist/page/{i}")
                 # Increase timeout to avoid rate limiting
-                page.wait_for_timeout(1500)
+                page.wait_for_timeout(2000)
                 extract_films(page,watchlist)
         
         # Print results
@@ -189,8 +189,12 @@ def get_all_regions() -> list:
 
 
 def extract_films(page, watchlist: list):
-    page.wait_for_selector("ul.poster-list li.poster-container")
-    
+    try:
+        page.wait_for_selector("ul.poster-list li.poster-container", timeout=60000)
+    except Exception as e:
+        print("Timeout waiting for film containers. Page content:")
+        print(page.content())
+        raise e 
     # Get all film containers on the page
     film_containers = page.query_selector_all("ul.poster-list li.poster-container")
     
