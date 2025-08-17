@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright/python:latest
+FROM mcr.microsoft.com/playwright/python:v1.54.0-jammy
 
 # Additional PostgreSQL dependencies 
 RUN apt-get update && apt-get install -y \
