@@ -1,9 +1,6 @@
 name: Deploy After Success
 
 on:
-  push:
-    branches:
-      - main
   workflow_run:
     workflows: ["Docker Backend Image CD", "Docker Frontend Image CD", "Docker Database Image CD"]
     types:
@@ -11,7 +8,7 @@ on:
 
 jobs:
   deploy:
-    # if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     environment: Docker
     runs-on: ubuntu-latest
     steps:
@@ -31,7 +28,6 @@ jobs:
           ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
           cd /home/arnaud/watchlist_providers/
           docker-compose down
-          docker system prune -f
-          docker image prune -a
+          docker image prune --all --force
           docker-compose up -d --build
           EOF
