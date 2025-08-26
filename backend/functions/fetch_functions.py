@@ -1,9 +1,12 @@
+import random
+import time
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import quote
 import os
 from dotenv import load_dotenv
-from playwright.sync_api import Playwright, sync_playwright
+from playwright.sync_api import sync_playwright
+from fake_useragent import UserAgent
 
 dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env')
 if os.path.exists(dotenv_path):
@@ -32,11 +35,51 @@ def get_watchlist(username: str) -> list:
         
         print(f"Scraping watchlist for user: {username}")
         
-        browser = playwright.chromium.launch(headless=True)
-        context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+        ua = UserAgent()
+    
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=True,
+            args=[
+                '--no-sandbox',
+                '--disable-blink-features=AutomationControlled',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--no-first-run',
+                '--disable-default-apps',
+                '--disable-features=TranslateUI',
+                '--disable-ipc-flooding-protection',
+                '--user-agent=' + ua.random
+            ]
         )
+        
+        context = browser.new_context(
+            viewport={'width': 1920, 'height': 1080},
+            user_agent=ua.random,
+            extra_http_headers={
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'DNT': '1',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+            }
+        )
+        
+        # Add stealth script to hide automation
+        context.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined,
+            });
+            
+            // Remove automation indicators
+            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
+            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
+            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
+        """)
+        
         page = context.new_page()
+        
         
         # Visit the user's watchlist page
         page.goto(f"https://letterboxd.com/{username}/watchlist/", timeout=60000)
@@ -189,58 +232,124 @@ def get_all_regions() -> list:
 
 
 def extract_films(page, watchlist: list):
+    """
+    Extract films from a Letterboxd watchlist page with enhanced detection evasion.
+    """
     try:
-        page.wait_for_selector("ul.poster-list li.poster-container", timeout=60000)
+        # Simulate human behavior
+        time.sleep(random.uniform(2, 5))
+
+        # Navigate like a human - scroll gradually
+        page.evaluate("""
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        """)
+        time.sleep(2)
+        
+        # Wait for the page to be fully loaded
+        page.wait_for_load_state('domcontentloaded', timeout=30000)
+        page.wait_for_load_state('networkidle', timeout=30000)
+        
+        # Updated selectors based on your HTML structure
+        selectors_to_try = [
+            'li.griditem div.react-component[data-item-name]',  # Most specific - targets the exact structure
+            'li.griditem div.react-component',                 # Less specific but still good
+            'div.react-component[data-item-name]',             # In case the li.griditem changes
+            'div.react-component[data-film-id]',               # Alternative data attribute
+            'li.griditem',                                     # Fallback to just the list items
+            "ul.poster-list li.poster-container",              # Original selectors as fallback
+            ".poster-container"
+        ]
+        
+        element_found = False
+        selected_selector = None
+        
+        # Scroll down gradually to trigger lazy loading
+        for i in range(3):
+            page.evaluate(f"window.scrollTo(0, {(i + 1) * 500})")
+            time.sleep(1)
+        
+        # Try each selector with patience
+        for selector in selectors_to_try:
+            try:
+                page.wait_for_selector(selector, timeout=15000)
+                element_found = True
+                selected_selector = selector
+                break
+            except Exception as e:
+                print(f"❌ Selector {selector} failed: {str(e)[:100]}...")
+                continue
+        
+        if not element_found:
+            print("❌ Could not find any film containers")
+            return
+        
+        # Extract films using the successful selector
+        film_elements = page.query_selector_all(selected_selector)
+        
+        # Process each element
+        for i, element in enumerate(film_elements):
+            try:
+                film_info = extract_film_info_from_react_component(element)
+                if film_info:
+                    watchlist.append(film_info)
+                else:
+                    print(f"  ❌ Failed to extract info from element {i+1}")
+            except Exception as e:
+                print(f"❌ Error processing film element {i+1}: {e}")
+                continue
+        print(f"Extracted {len(film_elements)} films in page {page.url.split('/')[-2] if page.url.split('/')[-3] == 'page' else 1}")
+
     except Exception as e:
-        print("Timeout waiting for film containers. Page content:")
-        print(page.content())
-        raise e 
-    # Get all film containers on the page
-    film_containers = page.query_selector_all("ul.poster-list li.poster-container")
-    
-    for film in film_containers:
-        try:
-            # Extract film title from alt attribute
-            poster_img = film.query_selector("div.film-poster img")
-            if not poster_img:
-                continue
-                
-            title = poster_img.get_attribute("alt")
-            
-            # Extract film slug and year
-            poster_div = film.query_selector("div.film-poster")
-            if not poster_div:
-                continue
-                
-            film_slug = poster_div.get_attribute("data-film-slug")
-            
-            # Check if there's a year in the slug
+        print(f"💥 Critical error in extract_films: {e}")
+        return
+
+def extract_film_info_from_react_component(element):
+    """Extract film information from a React component element"""
+    try:
+        # First, try to find the react component div within the element
+        react_component = element.query_selector('div.react-component[data-item-name]')
+        if not react_component:
+            # If the element itself is the react component
+            if element.get_attribute('data-item-name'):
+                react_component = element
+            else:
+                # Try to find any react component within
+                react_component = element.query_selector('div.react-component')
+        
+        if not react_component:
+            print("    ❌ No react component found in element")
+            return None
+        
+        # Extract data from React component attributes
+        item_name = react_component.get_attribute("data-item-name")
+        
+        # If we have item_name, use that as the title
+        if item_name:
+            title = item_name
+            # Extract year from title if present (e.g., "Philadelphia (1993)")
             year = None
-            if film_slug:
-                parts = film_slug.split("-")
-                if len(parts) > 0 and len(parts[-1]) == 4 and parts[-1].isdigit():
-                    year = int(parts[-1])
+            if "(" in title and ")" in title:
+                try:
+                    year_part = title.split("(")[-1].split(")")[0]
+                    if year_part.isdigit() and len(year_part) == 4:
+                        year = int(year_part)
+                        # Clean title by removing the year part
+                        title = title.split("(")[0].strip()
+                except:
+                    pass
             
-            # Check if this film has been rated by owner
-            owner_rating = film.get_attribute("data-owner-rating")
-            rating = int(owner_rating) if owner_rating and owner_rating != "0" else None
-            
-            # Build film info
-            film_info = {
-                "title": title,
-            }
-            
+            film_info = {"title": title}
             if year:
-                film_info["year"] = year
+                film_info["date"] = year
                 
-            if rating:
-                film_info["rating"] = rating
-                
-            # Add to watchlist
-            watchlist.append(film_info)
-            
-        except Exception as e:
-            print(f"Error extracting film: {e}")
+            return film_info
+        
+    except Exception as e:
+        print(f"    ❌ Error extracting from React component: {e}")
+        return None
 
 
 def get_last_page_number(page):
