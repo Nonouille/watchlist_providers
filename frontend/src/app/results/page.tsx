@@ -144,7 +144,7 @@ export default function Result() {
                     <>
                         <div className="col-span-full flex flex-col items-center justify-center py-12">
                             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-3"></div>
-                            <p className="text-lg text-gray-600 dark:text-gray-300">Loading providers...</p>
+                            <p className="text-lg text-gray-600 dark:text-gray-300">Loading providers... This can take up to 2 minutes</p>
                         </div>
                     </>
                 }
