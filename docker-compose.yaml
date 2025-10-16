@@ -48,27 +48,6 @@ services:
     networks:
       - film_checker_back_db_network
 
-  datadog:
-    image: datadog/agent:latest
-    container_name: datadog-agent
-    restart: unless-stopped
-    env_file: .env
-    environment:
-      DD_API_KEY: ${DD_API_KEY}
-      DD_SITE: ${DD_SITE}
-      DD_APM_ENABLED: "true"
-      DD_LOGS_ENABLED: "true"
-      DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL: "true"
-      DD_CONTAINER_EXCLUDE: "name:datadog-agent"
-      DD_CONTAINER_INCLUDE: "name:film_checker_db name:film_checker_backend name:film_checker_frontend"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /proc/:/host/proc/:ro
-      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
-    networks:
-      - film_checker_front_back_network
-      - film_checker_back_db_network
-
 volumes:
   postgres_data:
 
