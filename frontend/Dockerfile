@@ -22,7 +22,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # inject build-time env so NEXT_PUBLIC_* is compiled into the build
-ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_API_URL=http://localhost:5000
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 # Set Next.js to output standalone build
@@ -51,6 +51,10 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# add entrypoint that sets a runtime default and execs the server
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 USER nextjs
 
 EXPOSE 3000
@@ -58,4 +62,7 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+# Use the entrypoint script so NEXT_PUBLIC_API_URL can be set at container start:
+# - uses the runtime env if provided
+# - falls back to http://localhost:8000 otherwise
+CMD ["/entrypoint.sh"]
