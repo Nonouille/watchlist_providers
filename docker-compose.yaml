@@ -41,9 +41,6 @@ services:
     image: nonouille/watchlist_provider_frontend:latest
     container_name: film_checker_frontend
     restart: unless-stopped
-    env_file: .env
-    environment:
-      NEXT_PUBLIC_API_URL: ${BACKEND_ENDPOINT}
     ports:
       - "3000:3000"
     depends_on:
