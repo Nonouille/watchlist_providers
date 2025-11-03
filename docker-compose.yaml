@@ -38,11 +38,20 @@ services:
       - film_checker_front_back_network
 
   frontend:
-    image: nonouille/watchlist_provider_frontend:latest
-    container_name: film_checker_frontend
-    restart: unless-stopped
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # build-time — required to embed into Next.js
+        NEXT_PUBLIC_API_URL: ${BACKEND_ENDPOINT}
+    env_file: .env
+    environment:
+      # runtime — optional, useful for server-side code or debugging
+      - NEXT_PUBLIC_API_URL=${BACKEND_ENDPOINT}
     ports:
       - "3000:3000"
+    container_name: film_checker_frontend
+    restart: unless-stopped
     depends_on:
       - backend
     networks:

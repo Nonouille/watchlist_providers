@@ -21,6 +21,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# inject build-time env so NEXT_PUBLIC_* is compiled into the build
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
 # Set Next.js to output standalone build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
