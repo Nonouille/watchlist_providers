@@ -20,10 +20,12 @@ from functions.fetch_functions import (
     get_genres_id,
 )
 from flask_cors import CORS
+import logging
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.config["APPLICATION_ROOT"] = "/api"
 CORS(app)
+logger = logging.getLogger(__name__)
 
 SWAGGER_URL = "/swagger"
 API_URL = "/static/swagger.json"
@@ -115,14 +117,23 @@ def results():
         or (datetime.now() - last_research_date).days > 7
         or refresh
     ):
-        watchlist = get_watchlist(username)
-        if not watchlist:
-            return "Error: failed to retrieve the watchlist", 500
-        watchlist = get_ids(watchlist)
-        watchlist = get_providers(watchlist)
-        watchlist = sort_watchlist(watchlist, selected_providers)
-        modify_last_research_user(user_ID)
-        modify_film(user_ID, country_code, watchlist)
+        try:
+            watchlist = get_watchlist(username)
+            if watchlist is None:
+                return jsonify({"error": "Failed to retrieve watchlist from Letterboxd."}), 503
+            # If the user has an empty watchlist, that's valid; return empty results.
+            if not watchlist:
+                return jsonify([]), 200
+
+            watchlist = get_ids(watchlist)
+            watchlist = get_providers(watchlist)
+            watchlist = sort_watchlist(watchlist, selected_providers)
+            modify_last_research_user(user_ID)
+            modify_film(user_ID, country_code, watchlist)
+        except Exception as e:
+            logger.exception("Failed to build results for %s", username)
+            # Frontend will display this message if available
+            return jsonify({"error": f"Failed to load results: {str(e)}"}), 503
     elif any(film["providers"] not in selected_providers for film in watchlist):
         watchlist = sort_watchlist(watchlist, selected_providers)
 

@@ -6,6 +6,7 @@ from urllib.parse import quote
 import os
 from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright
+from playwright.sync_api import Error as PlaywrightError
 from fake_useragent import UserAgent
 
 dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), '.env')
@@ -26,17 +27,42 @@ headers = {
     "Authorization": f"Bearer {TMDB_TOKEN}",
 }
 
+def _goto_with_retries(page, url: str, *, timeout_ms: int = 60000, max_attempts: int = 3) -> bool:
+    """
+    Navigate with retries to survive transient DNS/network failures.
+    Returns True on success, False after exhausting attempts.
+    """
+    last_err: Exception | None = None
+    for attempt in range(1, max_attempts + 1):
+        try:
+            page.goto(url, wait_until="domcontentloaded", timeout=timeout_ms)
+            return True
+        except PlaywrightError as e:
+            last_err = e
+            # Backoff with jitter
+            sleep_s = min(2 ** attempt, 10) + random.uniform(0.1, 0.8)
+            print(f"⚠️ page.goto failed (attempt {attempt}/{max_attempts}) for {url}: {str(e)[:160]}")
+            time.sleep(sleep_s)
+        except Exception as e:
+            last_err = e
+            sleep_s = min(2 ** attempt, 10) + random.uniform(0.1, 0.8)
+            print(f"⚠️ Unexpected error during navigation (attempt {attempt}/{max_attempts}) for {url}: {str(e)[:160]}")
+            time.sleep(sleep_s)
+
+    if last_err:
+        print(f"❌ Giving up navigating to {url}: {last_err}")
+    return False
+
 def get_watchlist(username: str) -> list:
     """
-    Retrieve the watchlist of a Letterboxd user by running the letterboxd_scrapper Docker image.
+    Retrieve the watchlist of a Letterboxd user via Playwright scraping.
+    This function is best-effort: it will return partial results if some pages fail.
     """
-    with sync_playwright() as playwright:
-        watchlist = []
-        
-        print(f"Scraping watchlist for user: {username}")
-        
-        ua = UserAgent()
-    
+    watchlist: list[dict] = []
+    print(f"Scraping watchlist for user: {username}")
+    ua = UserAgent()
+    user_agent = ua.random
+
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
@@ -49,13 +75,13 @@ def get_watchlist(username: str) -> list:
                 '--disable-default-apps',
                 '--disable-features=TranslateUI',
                 '--disable-ipc-flooding-protection',
-                '--user-agent=' + ua.random
+                '--user-agent=' + user_agent
             ]
         )
         
         context = browser.new_context(
             viewport={'width': 1920, 'height': 1080},
-            user_agent=ua.random,
+            user_agent=user_agent,
             extra_http_headers={
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
                 'Accept-Language': 'en-US,en;q=0.5',
@@ -79,21 +105,34 @@ def get_watchlist(username: str) -> list:
         """)
         
         page = context.new_page()
+        page.set_default_navigation_timeout(60000)
+        page.set_default_timeout(60000)
         
         
         # Visit the user's watchlist page
-        page.goto(f"https://letterboxd.com/{username}/watchlist/", timeout=60000)
+        first_url = f"https://letterboxd.com/{username}/watchlist/"
+        if not _goto_with_retries(page, first_url, timeout_ms=60000, max_attempts=3):
+            context.close()
+            browser.close()
+            return watchlist
+
         last_page = get_last_page_number(page)
+        if not last_page:
+            last_page = 1
         print(f"Found {last_page} page(s) for {username}'s watchlist")
-        extract_films(page,watchlist)
+        extract_films(page, watchlist)
         
         # Loop through the pages
         if last_page > 1:
             for i in range(2, last_page + 1):
-                page.goto(f"https://letterboxd.com/{username}/watchlist/page/{i}")
-                # Increase timeout to avoid rate limiting
-                page.wait_for_timeout(2000)
-                extract_films(page,watchlist)
+                url = f"https://letterboxd.com/{username}/watchlist/page/{i}"
+                ok = _goto_with_retries(page, url, timeout_ms=60000, max_attempts=3)
+                if not ok:
+                    # Best-effort: skip this page but continue.
+                    continue
+                # Small delay to reduce rate limiting / bot detection
+                page.wait_for_timeout(1500)
+                extract_films(page, watchlist)
         
         # Print results
         print(f"Total films collected: {len(watchlist)}")
@@ -248,9 +287,13 @@ def extract_films(page, watchlist: list):
         """)
         time.sleep(2)
         
-        # Wait for the page to be fully loaded
-        page.wait_for_load_state('domcontentloaded', timeout=30000)
-        page.wait_for_load_state('networkidle', timeout=30000)
+        # Wait for the page to be usable (networkidle is often flaky on modern sites)
+        page.wait_for_load_state('domcontentloaded', timeout=60000)
+        try:
+            page.wait_for_load_state('load', timeout=30000)
+        except Exception:
+            # Best-effort; selectors below will be the real gate.
+            pass
         
         # Updated selectors based on your HTML structure
         selectors_to_try = [
@@ -371,6 +414,7 @@ def get_last_page_number(page):
                 pass
     except:
         return 1
+    return 1
     
 def get_genres_id() -> dict:
     """

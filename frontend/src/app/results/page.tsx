@@ -63,11 +63,20 @@ export default function Result() {
                 refresh: refresh,
             }),
         })
-            .then((response) => {
+            .then(async (response) => {
                 if (!response.ok) {
-                    setError(`HTTP error! Status: ${response.status}`);
+                    let message = `HTTP error! Status: ${response.status}`;
+                    try {
+                        const body = await response.json();
+                        if (body?.error && typeof body.error === "string") {
+                            message = body.error;
+                        }
+                    } catch {
+                        // ignore JSON parsing errors
+                    }
+                    setError(message);
                     setLoading(false);
-                    throw new Error(`HTTP error! Status: ${response.status}`);
+                    throw new Error(message);
                 }
                 return response.json();
             })
