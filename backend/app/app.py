@@ -87,6 +87,7 @@ def get_genres():
 
 @app.route("/results", methods=["POST"])
 def results():
+    logger.info("POST /results started")
     region_list = get_all_regions()
     data = request.json
     username = data.get("username")
@@ -118,11 +119,13 @@ def results():
         or refresh
     ):
         try:
+            logger.info("Building results via live scrape for user=%s country=%s refresh=%s", username, country_code, refresh)
             watchlist = get_watchlist(username)
             if watchlist is None:
                 return jsonify({"error": "Failed to retrieve watchlist from Letterboxd."}), 503
             # If the user has an empty watchlist, that's valid; return empty results.
             if not watchlist:
+                logger.info("Empty watchlist for user=%s", username)
                 return jsonify([]), 200
 
             watchlist = get_ids(watchlist)
@@ -137,4 +140,5 @@ def results():
     elif any(film["providers"] not in selected_providers for film in watchlist):
         watchlist = sort_watchlist(watchlist, selected_providers)
 
+    logger.info("POST /results finished (count=%s)", len(watchlist) if isinstance(watchlist, list) else "n/a")
     return watchlist

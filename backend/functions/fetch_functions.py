@@ -27,6 +27,74 @@ headers = {
     "Authorization": f"Bearer {TMDB_TOKEN}",
 }
 
+def _parse_title_year(title: str) -> tuple[str, int | None]:
+    title = (title or "").strip()
+    if "(" in title and title.endswith(")"):
+        try:
+            year_part = title.rsplit("(", 1)[-1].rstrip(")")
+            if year_part.isdigit() and len(year_part) == 4:
+                return title.rsplit("(", 1)[0].strip(), int(year_part)
+        except Exception:
+            pass
+    return title, None
+
+def _get_watchlist_via_rss(username: str) -> list[dict] | None:
+    """
+    Prefer the RSS feed to avoid Cloudflare/Playwright flakiness.
+    Returns:
+      - list[dict] on success (possibly empty)
+      - None if RSS cannot be fetched/parsed
+    """
+    url = f"https://letterboxd.com/{username}/watchlist/rss/"
+    try:
+        r = requests.get(
+            url,
+            timeout=20,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "application/rss+xml,application/xml;q=0.9,*/*;q=0.8",
+            },
+        )
+    except Exception as e:
+        print(f"⚠️ RSS request failed for {url}: {e}", flush=True)
+        return None
+
+    if r.status_code != 200 or not r.text:
+        print(f"⚠️ RSS unavailable for {username} (status={r.status_code})", flush=True)
+        return None
+
+    try:
+        soup = BeautifulSoup(r.text, "xml")
+        items = soup.find_all("item")
+        out: list[dict] = []
+        for item in items:
+            # Letterboxd often provides namespaced tags, but be defensive.
+            film_title_tag = item.find("letterboxd:filmTitle") or item.find("filmTitle")
+            film_year_tag = item.find("letterboxd:filmYear") or item.find("filmYear")
+            if film_title_tag and film_title_tag.text:
+                title = film_title_tag.text.strip()
+                year = None
+                if film_year_tag and (film_year_tag.text or "").strip().isdigit():
+                    year = int(film_year_tag.text.strip())
+                film = {"title": title}
+                if year:
+                    film["date"] = year
+                out.append(film)
+                continue
+
+            title_tag = item.find("title")
+            if title_tag and title_tag.text:
+                title, year = _parse_title_year(title_tag.text)
+                if title:
+                    film = {"title": title}
+                    if year:
+                        film["date"] = year
+                    out.append(film)
+        return out
+    except Exception as e:
+        print(f"⚠️ RSS parse failed for {username}: {e}", flush=True)
+        return None
+
 def _goto_with_retries(page, url: str, *, timeout_ms: int = 60000, max_attempts: int = 3) -> bool:
     """
     Navigate with retries to survive transient DNS/network failures.
@@ -41,16 +109,16 @@ def _goto_with_retries(page, url: str, *, timeout_ms: int = 60000, max_attempts:
             last_err = e
             # Backoff with jitter
             sleep_s = min(2 ** attempt, 10) + random.uniform(0.1, 0.8)
-            print(f"⚠️ page.goto failed (attempt {attempt}/{max_attempts}) for {url}: {str(e)[:160]}")
+            print(f"⚠️ page.goto failed (attempt {attempt}/{max_attempts}) for {url}: {str(e)[:160]}", flush=True)
             time.sleep(sleep_s)
         except Exception as e:
             last_err = e
             sleep_s = min(2 ** attempt, 10) + random.uniform(0.1, 0.8)
-            print(f"⚠️ Unexpected error during navigation (attempt {attempt}/{max_attempts}) for {url}: {str(e)[:160]}")
+            print(f"⚠️ Unexpected error during navigation (attempt {attempt}/{max_attempts}) for {url}: {str(e)[:160]}", flush=True)
             time.sleep(sleep_s)
 
     if last_err:
-        print(f"❌ Giving up navigating to {url}: {last_err}")
+        print(f"❌ Giving up navigating to {url}: {last_err}", flush=True)
     return False
 
 def get_watchlist(username: str) -> list:
@@ -59,7 +127,14 @@ def get_watchlist(username: str) -> list:
     This function is best-effort: it will return partial results if some pages fail.
     """
     watchlist: list[dict] = []
-    print(f"Scraping watchlist for user: {username}")
+    print(f"Scraping watchlist for user: {username}", flush=True)
+
+    rss_watchlist = _get_watchlist_via_rss(username)
+    if rss_watchlist is not None:
+        print(f"✅ Loaded watchlist via RSS (count={len(rss_watchlist)})", flush=True)
+        return rss_watchlist
+
+    print("⚠️ RSS unavailable; falling back to Playwright scraping", flush=True)
     ua = UserAgent()
     user_agent = ua.random
 
@@ -119,7 +194,7 @@ def get_watchlist(username: str) -> list:
         last_page = get_last_page_number(page)
         if not last_page:
             last_page = 1
-        print(f"Found {last_page} page(s) for {username}'s watchlist")
+        print(f"Found {last_page} page(s) for {username}'s watchlist", flush=True)
         extract_films(page, watchlist)
         
         # Loop through the pages
@@ -136,7 +211,7 @@ def get_watchlist(username: str) -> list:
                 extract_films(page, watchlist)
         
         # Print results
-        print(f"Total films collected: {len(watchlist)}")
+        print(f"Total films collected: {len(watchlist)}", flush=True)
         
         # Close the browser and context
         context.close()
@@ -328,7 +403,7 @@ def extract_films(page, watchlist: list):
                 selected_selector = selector
                 break
             except Exception as e:
-                print(f"❌ Selector {selector} failed: {str(e)[:140]}...")
+                print(f"❌ Selector {selector} failed: {str(e)[:140]}...", flush=True)
                 continue
         
         if not element_found:
@@ -342,9 +417,9 @@ def extract_films(page, watchlist: list):
             except Exception:
                 snippet = ""
             if any(k in snippet for k in ["cloudflare", "captcha", "attention required", "access denied", "forbidden"]):
-                print(f"❌ Page appears blocked (title={title!r}).")
+                print(f"❌ Page appears blocked (title={title!r}).", flush=True)
             else:
-                print(f"❌ Could not find any film containers (title={title!r}).")
+                print(f"❌ Could not find any film containers (title={title!r}).", flush=True)
             return
         
         # Extract films using the successful selector
@@ -361,14 +436,14 @@ def extract_films(page, watchlist: list):
                         existing.add(key)
                         watchlist.append(film_info)
                 else:
-                    print(f"  ❌ Failed to extract info from element {i+1}")
+                    print(f"  ❌ Failed to extract info from element {i+1}", flush=True)
             except Exception as e:
-                print(f"❌ Error processing film element {i+1}: {e}")
+                print(f"❌ Error processing film element {i+1}: {e}", flush=True)
                 continue
-        print(f"Extracted {len(film_elements)} films in page {page.url.split('/')[-2] if page.url.split('/')[-3] == 'page' else 1}")
+        print(f"Extracted {len(film_elements)} films in page {page.url.split('/')[-2] if page.url.split('/')[-3] == 'page' else 1}", flush=True)
 
     except Exception as e:
-        print(f"💥 Critical error in extract_films: {e}")
+        print(f"💥 Critical error in extract_films: {e}", flush=True)
         return
 
 def extract_film_info_from_react_component(element):
@@ -439,7 +514,7 @@ def extract_film_info_from_react_component(element):
             return film_info
         
     except Exception as e:
-        print(f"    ❌ Error extracting from React component: {e}")
+        print(f"    ❌ Error extracting from React component: {e}", flush=True)
         return None
 
 

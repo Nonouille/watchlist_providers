@@ -23,6 +23,8 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
+      PYTHONUNBUFFERED: "1"
+      PYTHONFAULTHANDLER: "1"
       TMDB_TOKEN: ${TMDB_TOKEN}
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
