@@ -125,7 +125,8 @@ def get_watchlist(username: str) -> list:
         # Loop through the pages
         if last_page > 1:
             for i in range(2, last_page + 1):
-                url = f"https://letterboxd.com/{username}/watchlist/page/{i}"
+                # Letterboxd canonical URLs use a trailing slash; without it we can get odd behavior/blocks.
+                url = f"https://letterboxd.com/{username}/watchlist/page/{i}/"
                 ok = _goto_with_retries(page, url, timeout_ms=60000, max_attempts=3)
                 if not ok:
                     # Best-effort: skip this page but continue.
@@ -295,15 +296,20 @@ def extract_films(page, watchlist: list):
             # Best-effort; selectors below will be the real gate.
             pass
         
-        # Updated selectors based on your HTML structure
+        # Selectors to cover multiple Letterboxd markups (react + classic posters)
         selectors_to_try = [
-            'li.griditem div.react-component[data-item-name]',  # Most specific - targets the exact structure
-            'li.griditem div.react-component',                 # Less specific but still good
-            'div.react-component[data-item-name]',             # In case the li.griditem changes
-            'div.react-component[data-film-id]',               # Alternative data attribute
-            'li.griditem',                                     # Fallback to just the list items
-            "ul.poster-list li.poster-container",              # Original selectors as fallback
-            ".poster-container"
+            # Modern posters
+            "div.film-poster[data-film-name]",
+            "div.film-poster",
+            # Older / alternative poster containers
+            "ul.poster-list li.poster-container",
+            ".poster-container",
+            # React-ish markup (some pages/users)
+            "li.griditem div.react-component[data-item-name]",
+            "li.griditem div.react-component",
+            "div.react-component[data-item-name]",
+            "div.react-component[data-film-id]",
+            "li.griditem",
         ]
         
         element_found = False
@@ -314,30 +320,46 @@ def extract_films(page, watchlist: list):
             page.evaluate(f"window.scrollTo(0, {(i + 1) * 500})")
             time.sleep(1)
         
-        # Try each selector with patience
+        # Try each selector quickly (don't burn minutes per page)
         for selector in selectors_to_try:
             try:
-                page.wait_for_selector(selector, timeout=15000)
+                page.wait_for_selector(selector, timeout=6000)
                 element_found = True
                 selected_selector = selector
                 break
             except Exception as e:
-                print(f"❌ Selector {selector} failed: {str(e)[:100]}...")
+                print(f"❌ Selector {selector} failed: {str(e)[:140]}...")
                 continue
         
         if not element_found:
-            print("❌ Could not find any film containers")
+            # Helpful diagnostics: often a block page or an error page.
+            try:
+                title = page.title()
+            except Exception:
+                title = ""
+            try:
+                snippet = page.content()[:800].lower()
+            except Exception:
+                snippet = ""
+            if any(k in snippet for k in ["cloudflare", "captcha", "attention required", "access denied", "forbidden"]):
+                print(f"❌ Page appears blocked (title={title!r}).")
+            else:
+                print(f"❌ Could not find any film containers (title={title!r}).")
             return
         
         # Extract films using the successful selector
         film_elements = page.query_selector_all(selected_selector)
+        existing = {(f.get("title"), f.get("date")) for f in watchlist if isinstance(f, dict)}
         
         # Process each element
         for i, element in enumerate(film_elements):
             try:
                 film_info = extract_film_info_from_react_component(element)
                 if film_info:
-                    watchlist.append(film_info)
+                    key = (film_info.get("title"), film_info.get("date"))
+                    if key not in existing:
+                        existing.add(key)
+                        watchlist.append(film_info)
                 else:
                     print(f"  ❌ Failed to extract info from element {i+1}")
             except Exception as e:
@@ -350,8 +372,28 @@ def extract_films(page, watchlist: list):
         return
 
 def extract_film_info_from_react_component(element):
-    """Extract film information from a React component element"""
+    """Extract film information from various Letterboxd element shapes."""
     try:
+        # 1) Fast path: film-poster markup (most common)
+        film_name = element.get_attribute("data-film-name")
+        if film_name:
+            year = element.get_attribute("data-film-release-year")
+            film_info = {"title": film_name}
+            if year and str(year).isdigit():
+                film_info["date"] = int(year)
+            return film_info
+
+        # Sometimes the container holds the film-poster div
+        poster = element.query_selector("div.film-poster")
+        if poster:
+            film_name = poster.get_attribute("data-film-name")
+            if film_name:
+                year = poster.get_attribute("data-film-release-year")
+                film_info = {"title": film_name}
+                if year and str(year).isdigit():
+                    film_info["date"] = int(year)
+                return film_info
+
         # First, try to find the react component div within the element
         react_component = element.query_selector('div.react-component[data-item-name]')
         if not react_component:
@@ -363,7 +405,13 @@ def extract_film_info_from_react_component(element):
                 react_component = element.query_selector('div.react-component')
         
         if not react_component:
-            print("    ❌ No react component found in element")
+            # Last resort: some poster markup exposes title in the image alt
+            img = element.query_selector("img[alt]")
+            if img:
+                alt = img.get_attribute("alt")
+                if alt:
+                    return {"title": alt}
+            print("    ❌ No known film markup found in element")
             return None
         
         # Extract data from React component attributes
