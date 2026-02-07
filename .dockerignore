@@ -1,0 +1,12 @@
+.git
+.github
+.env
+.DS_Store
+**/.DS_Store
+**/node_modules
+**/.next
+**/dist
+**/build
+**/__pycache__
+**/.pytest_cache
+**/*.log

@@ -65,7 +65,7 @@ def get_watchlist(username: str) -> list:
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
-            headless=False,
+            headless=True,
             args=[
                 '--no-sandbox',
                 '--disable-blink-features=AutomationControlled',
