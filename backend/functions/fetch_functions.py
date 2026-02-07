@@ -1,7 +1,6 @@
 import random
 import time
 import requests
-from bs4 import BeautifulSoup
 from urllib.parse import quote
 import os
 from dotenv import load_dotenv
@@ -26,74 +25,6 @@ headers = {
     "accept": "application/json",
     "Authorization": f"Bearer {TMDB_TOKEN}",
 }
-
-def _parse_title_year(title: str) -> tuple[str, int | None]:
-    title = (title or "").strip()
-    if "(" in title and title.endswith(")"):
-        try:
-            year_part = title.rsplit("(", 1)[-1].rstrip(")")
-            if year_part.isdigit() and len(year_part) == 4:
-                return title.rsplit("(", 1)[0].strip(), int(year_part)
-        except Exception:
-            pass
-    return title, None
-
-def _get_watchlist_via_rss(username: str) -> list[dict] | None:
-    """
-    Prefer the RSS feed to avoid Cloudflare/Playwright flakiness.
-    Returns:
-      - list[dict] on success (possibly empty)
-      - None if RSS cannot be fetched/parsed
-    """
-    url = f"https://letterboxd.com/{username}/watchlist/rss/"
-    try:
-        r = requests.get(
-            url,
-            timeout=20,
-            headers={
-                "User-Agent": "Mozilla/5.0",
-                "Accept": "application/rss+xml,application/xml;q=0.9,*/*;q=0.8",
-            },
-        )
-    except Exception as e:
-        print(f"⚠️ RSS request failed for {url}: {e}", flush=True)
-        return None
-
-    if r.status_code != 200 or not r.text:
-        print(f"⚠️ RSS unavailable for {username} (status={r.status_code})", flush=True)
-        return None
-
-    try:
-        soup = BeautifulSoup(r.text, "xml")
-        items = soup.find_all("item")
-        out: list[dict] = []
-        for item in items:
-            # Letterboxd often provides namespaced tags, but be defensive.
-            film_title_tag = item.find("letterboxd:filmTitle") or item.find("filmTitle")
-            film_year_tag = item.find("letterboxd:filmYear") or item.find("filmYear")
-            if film_title_tag and film_title_tag.text:
-                title = film_title_tag.text.strip()
-                year = None
-                if film_year_tag and (film_year_tag.text or "").strip().isdigit():
-                    year = int(film_year_tag.text.strip())
-                film = {"title": title}
-                if year:
-                    film["date"] = year
-                out.append(film)
-                continue
-
-            title_tag = item.find("title")
-            if title_tag and title_tag.text:
-                title, year = _parse_title_year(title_tag.text)
-                if title:
-                    film = {"title": title}
-                    if year:
-                        film["date"] = year
-                    out.append(film)
-        return out
-    except Exception as e:
-        print(f"⚠️ RSS parse failed for {username}: {e}", flush=True)
-        return None
 
 def _goto_with_retries(page, url: str, *, timeout_ms: int = 60000, max_attempts: int = 3) -> bool:
     """
@@ -129,18 +60,12 @@ def get_watchlist(username: str) -> list:
     watchlist: list[dict] = []
     print(f"Scraping watchlist for user: {username}", flush=True)
 
-    rss_watchlist = _get_watchlist_via_rss(username)
-    if rss_watchlist is not None:
-        print(f"✅ Loaded watchlist via RSS (count={len(rss_watchlist)})", flush=True)
-        return rss_watchlist
-
-    print("⚠️ RSS unavailable; falling back to Playwright scraping", flush=True)
     ua = UserAgent()
     user_agent = ua.random
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
-            headless=True,
+            headless=False,
             args=[
                 '--no-sandbox',
                 '--disable-blink-features=AutomationControlled',
@@ -182,6 +107,11 @@ def get_watchlist(username: str) -> list:
         page = context.new_page()
         page.set_default_navigation_timeout(60000)
         page.set_default_timeout(60000)
+        def _apply_zoom():
+            try:
+                page.evaluate("document.body.style.zoom = '50%'")
+            except Exception:
+                pass
         
         
         # Visit the user's watchlist page
@@ -190,25 +120,33 @@ def get_watchlist(username: str) -> list:
             context.close()
             browser.close()
             return watchlist
+        _apply_zoom()
 
-        last_page = get_last_page_number(page)
-        if not last_page:
-            last_page = 1
-        print(f"Found {last_page} page(s) for {username}'s watchlist", flush=True)
         extract_films(page, watchlist)
-        
-        # Loop through the pages
-        if last_page > 1:
-            for i in range(2, last_page + 1):
-                # Letterboxd canonical URLs use a trailing slash; without it we can get odd behavior/blocks.
-                url = f"https://letterboxd.com/{username}/watchlist/page/{i}/"
-                ok = _goto_with_retries(page, url, timeout_ms=60000, max_attempts=3)
-                if not ok:
-                    # Best-effort: skip this page but continue.
-                    continue
+
+        # Paginate by clicking numbered links if present (2, 3, 4, ...)
+        page_number = 2
+        while True:
+            try:
+                # Ensure pagination is in view / loaded
+                page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                link = page.get_by_role("link", name=str(page_number), exact=True)
+                if link.count() == 0:
+                    break
+                try:
+                    with page.expect_navigation(wait_until="domcontentloaded", timeout=60000):
+                        link.first.click()
+                except Exception:
+                    # Some navigations are not detected; best-effort fallback
+                    link.first.click()
+                    page.wait_for_load_state("domcontentloaded", timeout=60000)
+                _apply_zoom()
                 # Small delay to reduce rate limiting / bot detection
                 page.wait_for_timeout(1500)
                 extract_films(page, watchlist)
+                page_number += 1
+            except Exception:
+                break
         
         # Print results
         print(f"Total films collected: {len(watchlist)}", flush=True)
@@ -374,7 +312,6 @@ def extract_films(page, watchlist: list):
         # Selectors to cover multiple Letterboxd markups (react + classic posters)
         selectors_to_try = [
             # Modern posters
-            "div.film-poster[data-film-name]",
             "div.film-poster",
             # Older / alternative poster containers
             "ul.poster-list li.poster-container",
@@ -518,27 +455,6 @@ def extract_film_info_from_react_component(element):
         return None
 
 
-def get_last_page_number(page):
-    try:
-        page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        # Wait for pagination to load
-        page.wait_for_selector("div.paginate-pages", timeout=10000)
-        
-        # Find the last paginate-page element
-        last_paginate_item = page.query_selector("li.paginate-page:last-child a")
-    
-        # Extract the page number from the last element
-        if last_paginate_item:
-            try:
-                page_text = last_paginate_item.inner_text()
-                if page_text.isdigit():
-                    return int(page_text)
-            except:
-                pass
-    except:
-        return 1
-    return 1
-    
 def get_genres_id() -> dict:
     """
     Retrieve the genres from The Movie Database API.
