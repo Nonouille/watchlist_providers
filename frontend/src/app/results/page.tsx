@@ -17,7 +17,6 @@ export default function Result() {
     const [genres, setGenres] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string>("");
-    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [sidebarView, setSidebarView] = useState<"common" | "user1" | "user2">("common");
     const routeur = useRouter();
 

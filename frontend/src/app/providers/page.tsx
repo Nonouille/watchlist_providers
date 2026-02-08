@@ -51,7 +51,7 @@ export default function Providers() {
                 })
                 .catch((error) => console.error("Error fetching your providers:", error));
         }
-    }, [countryCode, setYourProviders, username, router]);
+    }, [countryCode, setYourProviders, username, router, dualMode, username2]);
     
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-900 to-indigo-900 dark:from-gray-900 dark:to-black py-12 px-4 sm:px-6 lg:px-8">

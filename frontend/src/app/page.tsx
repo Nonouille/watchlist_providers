@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 
 export default function Home() {
 
-  const { username, setUsername, username2, setUsername2, dualMode, setDualMode, countryCode, setCountryCode } = useResearch();
+  const { username, setUsername, username2, setUsername2, setDualMode, countryCode, setCountryCode } = useResearch();
   const [regions, setRegions] = useState<string[]>([]);
   const [showSecondUser, setShowSecondUser] = useState<boolean>(!!username2);
   const router = useRouter();
