@@ -5,6 +5,10 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 interface ResearchContextType {
     username: string;
     setUsername: (username: string) => void;
+    username2: string;
+    setUsername2: (username: string) => void;
+    dualMode: boolean;
+    setDualMode: (dualMode: boolean) => void;
     countryCode: string;
     setCountryCode: (countryCode: string) => void;
     yourProviders: string[];
@@ -24,6 +28,8 @@ interface ResearchProviderProps {
 // Provider component that will wrap parts of our app that need access to the context
 export const ResearchProvider: React.FC<ResearchProviderProps> = ({ children }) => {
     const [username, setUsername] = useState<string>('');
+    const [username2, setUsername2] = useState<string>('');
+    const [dualMode, setDualMode] = useState<boolean>(false);
     const [countryCode, setCountryCode] = useState<string>('');
     const [yourProviders, setYourProviders] = useState<string[]>([]);
     const [refresh, setRefresh] = useState<boolean>(false);
@@ -31,6 +37,10 @@ export const ResearchProvider: React.FC<ResearchProviderProps> = ({ children }) 
     const value = {
         username,
         setUsername,
+        username2,
+        setUsername2,
+        dualMode,
+        setDualMode,
         countryCode,
         setCountryCode,
         yourProviders,

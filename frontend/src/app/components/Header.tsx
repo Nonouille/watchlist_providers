@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import React from 'react';
+import { ThemeToggle } from '@/app/components/ThemeToggle';
 
 export const Header = () => {
     return (
@@ -10,7 +11,7 @@ export const Header = () => {
                         FilmChecker
                     </div>
                     
-                    <nav className="flex space-x-2">
+                    <nav className="flex items-center space-x-2">
                         <Link 
                             href="/" 
                             className="text-white hover:bg-blue-700 hover:bg-opacity-50 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
@@ -23,9 +24,10 @@ export const Header = () => {
                         >
                             About
                         </Link>
+                        <ThemeToggle />
                     </nav>
                 </div>
             </div>
         </header>
     );
-};
+}; 

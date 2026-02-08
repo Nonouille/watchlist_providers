@@ -5,13 +5,18 @@ from datetime import datetime
 import contextlib
 import os
 from dotenv import load_dotenv
-# Try to load from .env file first (for local development)
-# Try to load from .env file first (for local development)
-dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
-if os.path.exists(dotenv_path):
-    load_dotenv(dotenv_path)
-if os.path.exists(dotenv_path):
-    load_dotenv(dotenv_path)
+# Try to load from repo-root .env.local first, then .env, then backend/.env
+repo_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+root_env_local = os.path.join(repo_root, ".env.local")
+root_env = os.path.join(repo_root, ".env")
+backend_env = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+
+if os.path.exists(root_env_local):
+    load_dotenv(root_env_local)
+elif os.path.exists(root_env):
+    load_dotenv(root_env)
+elif os.path.exists(backend_env):
+    load_dotenv(backend_env)
 
 # Load environment variables - will get from container environment if set there
 POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")

@@ -7,7 +7,7 @@ import { API_BASE_URL } from '@/app/config/config';
 
 export default function Providers() {
 
-    const { username, countryCode, yourProviders, setYourProviders, refresh, setRefresh } = useResearch();
+    const { username, username2, dualMode, countryCode, yourProviders, setYourProviders, refresh, setRefresh } = useResearch();
     const [regionProviders, setRegionProviders] = useState<string[]>([])
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -16,7 +16,7 @@ export default function Providers() {
 
     useEffect(() => {
         setLoading(true);
-        if (!username || !countryCode) {
+        if (!username || !countryCode || (dualMode && !username2)) {
             router.push("/")
         }
         else {
