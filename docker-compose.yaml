@@ -16,12 +16,12 @@ services:
       - "127.0.0.1:5432:5432"
     networks:
       - film_checker_front_back_network
+      - film_checker_back_db_network
     security_opt:
       - no-new-privileges:true
-    cap_drop:
-      - ALL
     tmpfs:
       - /tmp
+      - /var/run/postgresql
 
   backend:
     image: nonouille/watchlist_provider_backend:latest
