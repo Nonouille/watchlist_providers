@@ -1,5 +1,5 @@
-# Use the official PostgreSQL image (smaller variant)
-FROM postgres:15-alpine
+# Use the official PostgreSQL image
+FROM postgres:15.15
 
 # Set environment variables
 ARG POSTGRES_USER
