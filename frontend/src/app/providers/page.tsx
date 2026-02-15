@@ -20,36 +20,54 @@ export default function Providers() {
             router.push("/")
         }
         else {
-            fetch(`${API_BASE_URL}/your_providers?username=${username}&country_code=${countryCode}`, {
-                method: "GET",
-            })
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    return response.json();
+            const fetchProviders = (user: string) =>
+                fetch(`${API_BASE_URL}/your_providers?username=${user}&country_code=${countryCode}`, {
+                    method: "GET",
                 })
-                .then((data) => {
-                    if (data.providers) {
-                        setYourProviders(data.providers);
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.json();
+                    });
+
+            const fetchRegionProviders = () =>
+                fetch(`${API_BASE_URL}/get_region_providers?country_code=${countryCode}`, {
+                    method: "GET",
+                })
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.json();
+                    });
+
+            const load = async () => {
+                try {
+                    if (dualMode && username2) {
+                        const [data1, data2] = await Promise.all([
+                            fetchProviders(username),
+                            fetchProviders(username2),
+                        ]);
+                        const merged = Array.from(new Set([...(data1.providers || []), ...(data2.providers || [])]));
+                        setYourProviders(merged);
+                    } else {
+                        const data = await fetchProviders(username);
+                        if (data.providers) {
+                            setYourProviders(data.providers);
+                        }
                     }
 
-                    fetch(`${API_BASE_URL}/get_region_providers?country_code=${countryCode}`, {
-                        method: "GET",
-                    })
-                        .then((response) => {
-                            if (!response.ok) {
-                                throw new Error(`HTTP error! Status: ${response.status}`);
-                            }
-                            return response.json();
-                        })
-                        .then((data) => {
-                            setRegionProviders(data.providers.sort((a : string, b : string) => a.localeCompare(b)));
-                            setLoading(false);
-                        })
-                        .catch((error) => console.error("Error fetching region providers:", error));
-                })
-                .catch((error) => console.error("Error fetching your providers:", error));
+                    const region = await fetchRegionProviders();
+                    setRegionProviders(region.providers.sort((a: string, b: string) => a.localeCompare(b)));
+                    setLoading(false);
+                } catch (error) {
+                    console.error("Error fetching providers:", error);
+                    setLoading(false);
+                }
+            };
+
+            load();
         }
     }, [countryCode, setYourProviders, username, router, dualMode, username2]);
     

@@ -85,6 +85,7 @@ export default function Result() {
                     country_code: countryCode,
                     providers: yourProviders,
                     refresh: refresh,
+                    dual_mode: dualMode,
                 }),
             });
             if (!response.ok) {
@@ -148,66 +149,66 @@ export default function Result() {
                         <div className="">
                             {!error ? (
                                 <>
+                                    <div className="mb-6 flex items-center justify-center gap-10">
+                                        <div className="flex items-center">
+                                            <label htmlFor="sort" className="mr-3 text-lg font-medium text-gray-700 dark:text-gray-200">
+                                                Genres:
+                                            </label>
+                                            <select
+                                                id="sort"
+                                                className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2"
+                                                onChange={(e) => {
+                                                    const selectedGenre = e.target.value;
+                                                    if (selectedGenre === "all") {
+                                                        setSortedResults(results);
+                                                    } else {
+                                                        const filteredResults = results.filter((film) => film.genres.includes(selectedGenre));
+                                                        setSortedResults(filteredResults);
+                                                    }
+                                                }}
+                                                defaultValue="all"
+                                            >
+                                                <option value="all">All Genres</option>
+                                                {genres.map((genre) => (
+                                                    <option key={genre} value={genre}>
+                                                        {genre.charAt(0).toUpperCase() + genre.slice(1)}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        {dualMode ? (
+                                            <div className="flex items-center">
+                                                <label htmlFor="results-filter" className="mr-3 text-lg font-medium text-gray-700 dark:text-gray-200">
+                                                    Watchlist:
+                                                </label>
+                                                <select
+                                                    id="results-filter"
+                                                    className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2"
+                                                    value={sidebarView}
+                                                    onChange={(e) => {
+                                                        const value = e.target.value as "common" | "user1" | "user2";
+                                                        setSidebarView(value);
+                                                        if (value === "common") {
+                                                            setResults(resultsCommon);
+                                                            setSortedResults(resultsCommon);
+                                                        } else if (value === "user1") {
+                                                            setResults(resultsUser1);
+                                                            setSortedResults(resultsUser1);
+                                                        } else {
+                                                            setResults(resultsUser2);
+                                                            setSortedResults(resultsUser2);
+                                                        }
+                                                    }}
+                                                >
+                                                    <option value="common">Common</option>
+                                                    <option value="user1">{username}</option>
+                                                    <option value="user2">{username2}</option>
+                                                </select>
+                                            </div>
+                                        ) : null}
+                                    </div>
                                     {results && results.length > 0 ? (
                                         <>
-                                            <div className="mb-6 flex items-center justify-center gap-10">
-                                                <div className="flex items-center">
-                                                    <label htmlFor="sort" className="mr-3 text-lg font-medium text-gray-700 dark:text-gray-200">
-                                                        Genres:
-                                                    </label>
-                                                    <select
-                                                        id="sort"
-                                                        className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2"
-                                                        onChange={(e) => {
-                                                            const selectedGenre = e.target.value;
-                                                            if (selectedGenre === "all") {
-                                                                setSortedResults(results);
-                                                            } else {
-                                                                const filteredResults = results.filter((film) => film.genres.includes(selectedGenre));
-                                                                setSortedResults(filteredResults);
-                                                            }
-                                                        }}
-                                                        defaultValue="all"
-                                                    >
-                                                        <option value="all">All Genres</option>
-                                                        {genres.map((genre) => (
-                                                            <option key={genre} value={genre}>
-                                                                {genre.charAt(0).toUpperCase() + genre.slice(1)}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-                                                {dualMode ? (
-                                                    <div className="flex items-center">
-                                                        <label htmlFor="results-filter" className="mr-3 text-lg font-medium text-gray-700 dark:text-gray-200">
-                                                            Watchlist:
-                                                        </label>
-                                                        <select
-                                                            id="results-filter"
-                                                            className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2"
-                                                            value={sidebarView}
-                                                            onChange={(e) => {
-                                                                const value = e.target.value as "common" | "user1" | "user2";
-                                                                setSidebarView(value);
-                                                                if (value === "common") {
-                                                                    setResults(resultsCommon);
-                                                                    setSortedResults(resultsCommon);
-                                                                } else if (value === "user1") {
-                                                                    setResults(resultsUser1);
-                                                                    setSortedResults(resultsUser1);
-                                                                } else {
-                                                                    setResults(resultsUser2);
-                                                                    setSortedResults(resultsUser2);
-                                                                }
-                                                            }}
-                                                        >
-                                                            <option value="common">Common</option>
-                                                            <option value="user1">{username}</option>
-                                                            <option value="user2">{username2}</option>
-                                                        </select>
-                                                    </div>
-                                                ) : null}
-                                            </div>
                                             <ResultCard films={sortedResults} />
                                         </>
                                     ) : (

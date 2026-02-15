@@ -94,6 +94,7 @@ def results():
     country_code = data.get("country_code")
     selected_providers = data.get("providers", [])
     refresh = data.get("refresh", False)
+    dual_mode = data.get("dual_mode", False)
     if not country_code:
         return "Error: country_code parameter is required", 400
     if not username:
@@ -109,7 +110,8 @@ def results():
     if last_research_date == -1:
         return "Error: failed to retrieve the last research date", 500
 
-    modify_user_providers(user_ID, country_code, selected_providers)
+    if not dual_mode:
+        modify_user_providers(user_ID, country_code, selected_providers)
 
     watchlist = get_user_results(user_ID, country_code)
     if (
